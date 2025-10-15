@@ -1,0 +1,5 @@
+#log.setLevel(log.ERROR_LEVEL)
+log.setLevel(log.INFO_LEVEL)
+#log.setLevel(log.WARNING_LEVEL)
+#log.setLevel(log.DEBUG_LEVEL)
+#log.setLevel(log.TRACE_LEVEL)

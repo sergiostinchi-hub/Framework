@@ -1,0 +1,81 @@
+Changing V. 2.4.0
+		- Added SetupHTTPOnlyCookiesProps option for basicTuning Task
+		- Added ApplyJDKLevel option for basicTuning Task
+		- Bug Fixing
+Changing V. 2.3.0
+		- Fix Bug on Read/Write URL
+		- FIX Bug on read/write Topics
+		- Add Features to PropagateCPropsAppServ (Only for DCA) 
+Changing V. 2.2.0
+		- Added Function setupXDDefaultSSLSettings
+Changing V. 2.1.0
+		- Added new Function # createUsersAndGroup #
+		- Modified script AddCustomPropertiesAS (added "ALL" choose for setup custom properties)
+Changing V. 2.0.0
+	    - Adding new Function changeChipersLevel (used to change Chiper Level to pre-existing SSLConfiguration)
+        - Adding new Function renewPluginPersonalCertificates (increase Expiration date for personal certificate in plugin-key.kdb)
+Changing V. 1.8.0
+        - Bug Fixing
+Changing V. 1.7.4
+        - Modify Method listSharedLib in ReadSharedLibrary to Fix Bug		
+Changing V. 1.7.3
+        - Modify Task applyWCProperties (Now is possible choose the property/value)	
+Changing V. 1.7.2
+        - Add New Tasks (ActivateDeleteIfExist and DenyDeleteIfExist)
+Changing V. 1.7.1
+        - Modify CreateConnectionFactory to solve a Bug (AuthDataAlias)
+Changing V. 1.7.0
+        - Added new Funcion addActivSpecCustomProps
+        - Modify  CreateConnectionFactory Function adding connectionNameList attribute
+        - Bug Fixing
+Changing V. 1.6.6
+        - modify build.xml	
+Changing V. 1.6.5
+        - correct tag clearInput-all in build.xml		
+Changing V. 1.6.4
+	    -  Add Port Management in ClearInput and ClearOutput Target
+Changing V. 1.6.3
+        - Change Resource.properties sintax
+Changing V. 1.6.2
+	    - Change menù Task For 730 Enviroments
+	    - Bug Fixing	
+Changing V. 1.6.1
+        - Add ReadPorts for Servers
+        - Bug Fixing	
+Changing V. 1.6.0
+        - Add Runtime Trace Configurator
+        - Add New Logging System
+        - Remove unused component
+        - Bug Fixing
+Changing V. 1.5.9
+        - Bug Fixing
+Changing V. 1.5.8
+        - Bug Fixing
+Changing V. 1.5.7	
+        - Bug Fixing
+Changing V. 1.5.6
+	    - Add RFH2 to Read and CreateQueue
+Changing V. 1.5.5
+	    - Add Informix DataSources Custom Properties
+	    - Add commandLine target
+Changing V. 1.5.4
+	    - Add Informix DataSources
+Changing V. 1.5.3
+	    - Add ApplyWCProperties to add webcontainer properties on different scope	
+Changing V. 1.5.2
+	    - Modificato la gestione dei deployment target nel file AdminApp.py
+	    - Inserito il target di modifca del Dmgr Source
+	    - Inserito il target di modifca del Dmgr Target
+Changing V. 1.5.1
+	    - Modificato lo script DeployApplication.py
+	    - Modificata la gestione del logging
+	    - Modificata la nomenclatura dei DynamicCluster
+Changing V. 1.5.0
+	    - Aggiunta la gestione del Container authAlias nei datasource
+	    - Modificata la gestione del logging
+	    - Modificato il menu ANT
+	    - Aggiunta una funzione di utility di replace di valori (HiddenRename) 
+	    - Aggiunto il WARNING per la creazione dei NameSpace con "/" nel nome
+	    - Bug Fixing
+Version 1.0
+	    - Basic Release
