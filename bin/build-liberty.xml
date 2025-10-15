@@ -1,0 +1,361 @@
+<?xml version = "1.0"?>
+<project name="Liberty Configuration Tools" default="-list-tasks">
+	<taskdef resource="net/sf/antcontrib/antcontrib.properties">
+		<classpath>
+			<pathelement location="../ant-contrib/ant-contrib-1.0b3.jar" />
+		</classpath>
+	</taskdef>
+	<taskdef resource="net/sf/antcontrib/antlib.xml">
+		<classpath>
+			<pathelement location="../ant-contrib/ant-contrib-1.0b3.jar" />
+		</classpath>
+	</taskdef>
+	<property name="root.framework.dir">/home/liberty/Liberty_Framework</property>
+	<property name="deploy.path.beneficiari">${root.framework.dir}k/deploy_Bonus_Mobilita</property>
+	<property name="deploy.path.esercenti">${root.framework.dir}/deploy_Bonus_Mobilita_Esercente</property>
+	<property name="backup.app.beneficiari">${root.framework.dir}/backup/beneficiari</property>
+	<property name="backup.app.esercenti">${root.framework.dir}/backup/esercenti</property>
+
+	<target name="inputListHosts" description="Get user input" depends="logging">
+		<input message="Insert list of Hosts separated by comma ES:(host1,host2)" addproperty="listHosts" />
+	</target>
+	<target name="inputListServers" description="Get user input" depends="logging">
+		<input message="Insert list of servers (must be present on each hosts) separated by comma ES:(server1,server2)" addproperty="listServers" />
+	</target>
+	<target name="inputLibertyPassword" description="Get user input" depends="logging">
+		<input message="Insert liberty user password" addproperty="liberty.password" />
+	</target>
+	<target name="input-deploy-path-custom" description="Get user input" depends="logging">
+		<input message="Insert Source Path for Application to deploy:" addproperty="deploy.path.custom" />
+	</target>
+
+
+	<target name="versionInfo">
+		<echo />
+		<echo>#################################</echo>
+		<echo> Framework Version 1.0</echo>
+		<echo> Build Date ${build.date}</echo>
+		<echo>#################################</echo>
+		<echo />
+
+	</target>
+	<target name="logging">
+		<record name="build.log" loglevel="debug" append="true" />
+	</target>
+	<target name="-list-tasks" depends="logging,versionInfo">
+		<echo>Targets:
+                -----------------------------------------------
+                Liberty Deploy Function
+                -----------------------------------------------
+                # Deploy-App-Custom
+                # Deploy-App-Mobilita
+                # Sync-Configuration
+                # startServers
+                # stopServers
+                # restartServers
+                # startServerBeneficiariAll
+                # stopServerBeneficiariAll
+                # restartServerBeneficiariAll
+                # startServerEsercentiAll
+                # stopServerEsercentiAll
+                # restartEsercentiAll
+                -----------------------------------------------
+      </echo>
+		<input message=" Insert one of the below task" addproperty="config-tasks.choice" />
+		<antcall target="${config-tasks.choice}" />
+	</target>
+
+	<target name="Deploy-App-Custom" description="Deploy Application to Servers" depends="logging,inputListHosts,inputListServers,inputLibertyPassword">
+		<echo> Procedura di deploy della applicazioni su ambiente liberty  </echo>
+		<property name="servers.root.path" value="/prod/IBM/WebSphere/wlp/usr/servers/" />
+		<input message="The root path is ${servers.root.path} ? [yes,no]  " addproperty="input.root.path" />
+		<if>
+			<equals arg1="${input.root.path}" arg2="yes" />
+			<then>
+				<echo> The servers root path is ${servers.root.path} </echo>
+			</then>
+			<else>
+				<input message="Insert Root Path " addproperty="servers.root.path" />
+				<echo> The new Servers root path is ${servers.root.path} </echo>
+			</else>
+		</if>
+		<antcall target="-deploy-app">
+			<param name="listHosts" value="${listHosts}" />
+			<param name="listServers" value="${listServers}" />
+			<param name="liberty.password" value="${liberty.password}" />
+		</antcall>
+	</target>
+
+	<target name="Deploy-App-Mobilita" description="Deploy Application to Servers" depends="logging,inputLibertyPassword">
+		<echo> Procedura di deploy della applicazioni su ambiente liberty  </echo>
+		<property name="servers.root.path" value="/prod/IBM/WebSphere/wlp/usr/servers" />
+		<echo>
+            Which Type of Trace do you want to Apply?
+            COD  DESCRIPTION
+            -----------------------------------------------
+            BEN  BonusMobilitaBeneficiario
+            ESE  BonusEsercente
+            -----------------------------------------------   
+      </echo>
+		<input message="Scegli L'ambiente: " validargs="BEN,ESE" addproperty="setEnv.choice" />
+		<if>
+			<equals arg1="${setEnv.choice}" arg2="BEN" />
+			<then>
+				<antcall target="-deploy-app">
+					<param name="listHosts" value="mdawlplp01-01.srv.sogei.it,mdawlplp01-02.srv.sogei.it,mdawlplp01-03.srv.sogei.it,mdawlplp01-04.srv.sogei.it" />
+					<!--<param name="listHosts" value="ENWAS8V04-01.srv.sogei.it" />-->
+					<param name="listServers" value="BonusMobilita_srv1,BonusMobilita_srv2" />
+					<param name="liberty.password" value="${liberty.password}" />
+					<param name="type.deploy" value="BEN" />
+				</antcall>
+			</then>
+			<elseif>
+				<equals arg1="${setEnv.choice}" arg2="ESE" />
+				<then>
+					<antcall target="-deploy-app">
+						<param name="listHosts" value="mdawlplp01-01.srv.sogei.it,mdawlplp01-02.srv.sogei.it" />
+						<!--<param name="listHosts" value="ENWAS8V04-01.srv.sogei.it" />-->
+						<param name="listServers" value="BonusMobEsercenti_srv1" />
+						<param name="liberty.password" value="${liberty.password}" />
+						<param name="type.deploy" value="ESE" />
+					</antcall>
+				</then>
+			</elseif>
+			<else>
+				<echo> Nessuna scelta effettuata </echo>
+			</else>
+		</if>
+	</target>
+	<target name="-deploy-app">
+		<echo>Procedura Deploy Applicazioni</echo>
+		<antcall target="-backup_old_application">
+			<param name="type.deploy" value="${type.deploy}" />
+		</antcall>
+		<for list="${listHosts}" param="host.server">
+			<sequential>
+				<var name="host" value="@{host.server}" />
+				<echo> host destinazione: ${host}</echo>
+				<for list="${listServers}" param="liberty.server">
+					<sequential>
+						<antcall target="-stopServers">
+							<param name="listHosts" value="${host}" />
+							<param name="listServers" value="@{liberty.server}" />
+							<param name="liberty.password" value="${liberty.password}" />
+						</antcall>
+						<antcall target="-scp-custom">
+							<param name="host" value="${host}" />
+							<param name="liberty-server" value="@{liberty.server}" />
+							<param name="liberty.password" value="${liberty.password}" />
+							<param name="type.deploy" value="${type.deploy}" />
+						</antcall>
+						<antcall target="-startServers">
+							<param name="listHosts" value="${host}" />
+							<param name="listServers" value="@{liberty.server}" />
+							<param name="liberty.password" value="${liberty.password}" />
+						</antcall>
+					</sequential>
+				</for>
+			</sequential>
+		</for>
+	</target>
+	<target name="-backup_old_application" depends="logging">
+		<trycatch>
+			<try>
+				<tstamp>
+					<format property="TODAY_UK" pattern="yyyy-MM-dd_hh.mm.ss" locale="en,UK" />
+				</tstamp>
+				<echo> DATA = ${TODAY_UK} con tipo deploy : ${type.deploy}</echo>
+				<if>
+					<equals arg1="${type.deploy}" arg2="BEN" />
+					<then>
+						<mkdir dir="${backup.app.beneficiari}/apps_${TODAY_UK}" />
+						<copy todir="${backup.app.beneficiari}/apps_${TODAY_UK}">
+							<fileset dir="/prod/IBM/WebSphere/wlp/usr/servers/BonusMobilita_srv1/apps/">
+								<include name="**/*.ear" />
+								<include name="**/*.war" />
+							</fileset>
+						</copy>
+					</then>
+					<elseif>
+						<equals arg1="${type.deploy}" arg2="ESE" />
+						<then>
+							<mkdir dir="${backup.app.esercenti}/apps_${TODAY_UK}" />
+							<copy todir="${backup.app.esercenti}/apps_${TODAY_UK}">
+								<fileset dir="/prod/IBM/WebSphere/wlp/usr/servers/BonusMobEsercenti_srv1/apps/">
+									<include name="**/*.ear" />
+									<include name="**/*.war" />
+								</fileset>
+							</copy>
+						</then>
+					</elseif>
+				</if>
+			</try>
+			<catch>
+			</catch>
+		</trycatch>
+	</target>
+	<target name="-scp-custom" depends="logging">
+		<trycatch>
+			<try>
+				<echo> TYPE DEPLOY = ${type.deploy} </echo>
+				<if>
+					<equals arg1="${type.deploy}" arg2="ESE" />
+					<then>
+						<var name="deploy.path.custom" value="${deploy.path.esercenti}" />
+						<echo> SCP-CUSTOM - ENV:ESE  Path deploy: ${type.deploy}</echo>
+					</then>
+					<elseif>
+						<equals arg1="${type.deploy}" arg2="BEN" />
+						<then>
+							<var name="deploy.path.custom" value="${deploy.path.beneficiari}" />
+							<echo> SCP-CUSTOM - ENV:BEN  Path deploy: ${type.deploy}</echo>
+						</then>
+					</elseif>
+					<else>
+						<echo> SCP-CUSTOM - ENV: CUSTOM  Path deploy: ${type.deploy}</echo>
+						<antcall target="input-deploy-path-custom" />
+					</else>
+				</if>
+				<echo> BEGIN SCP liberty:${liberty.password}@${host}:${servers.root.path}/${liberty-server}/apps</echo>
+				<scp todir="liberty:${liberty.password}@${host}:${servers.root.path}/${liberty-server}/apps" trust="true">
+					<fileset dir="${deploy.path.custom}">
+						<include name="**/*.ear" />
+						<include name="**/*.war" />
+					</fileset>
+				</scp>
+			</try>
+			<catch>
+			</catch>
+		</trycatch>
+	</target>
+
+	<target name="startServers" depends="logging,inputListHosts,inputListServers,inputLibertyPassword">
+		<for list="${listHosts}" param="host.server">
+			<sequential>
+				<var name="host" value="@{host.server}" />
+				<echo> Host destinazione: ${host}</echo>
+				<for list="${listServers}" param="liberty.server">
+					<sequential>
+						<echo> Start Server @{liberty.server} on Host:${host} </echo>
+						<sshexec host="${host}" username="liberty" password="${liberty.password}" command="/prod/IBM/WebSphere/wlp/bin/server start @{liberty.server}" trust="true" />
+					</sequential>
+				</for>
+			</sequential>
+		</for>
+	</target>
+	<target name="stopServers" depends="logging,inputListHosts,inputListServers,inputLibertyPassword">
+		<for list="${listHosts}" param="host.server">
+			<sequential>
+				<var name="host" value="@{host.server}" />
+				<echo> Host destinazione: ${host}</echo>
+				<for list="${listServers}" param="liberty.server">
+					<sequential>
+						<echo> Stop Server @{liberty.server} on Host:${host} </echo>
+						<sshexec host="${host}" username="liberty" password="${liberty.password}" command="/prod/IBM/WebSphere/wlp/bin/server stop @{liberty.server}" trust="true" />
+					</sequential>
+				</for>
+			</sequential>
+		</for>
+	</target>
+	<target name="-stopServers" depends="logging">
+		<for list="${listHosts}" param="host.server">
+			<sequential>
+				<var name="host" value="@{host.server}" />
+				<echo> Host destinazione: ${host}</echo>
+				<for list="${listServers}" param="liberty.server">
+					<sequential>
+						<echo> Start Server @{liberty.server} on Host:${host} </echo>
+						<trycatch>
+							<try>
+								<sshexec host="${host}" username="liberty" password="${liberty.password}" command="/prod/IBM/WebSphere/wlp/bin/server stop @{liberty.server}" trust="true" />
+							</try>
+							<catch>
+							</catch>
+							<finally>
+							</finally>
+						</trycatch>
+					</sequential>
+				</for>
+			</sequential>
+		</for>
+	</target>
+	<target name="-startServers" depends="logging">
+		<for list="${listHosts}" param="host.server">
+			<sequential>
+				<var name="host" value="@{host.server}" />
+				<echo> Host destinazione: ${host}</echo>
+				<for list="${listServers}" param="liberty.server">
+					<sequential>
+						<echo> Start Server @{liberty.server} on Host:${host} </echo>
+						<trycatch>
+							<try>
+								<sshexec host="${host}" username="liberty" password="${liberty.password}" command="/prod/IBM/WebSphere/wlp/bin/server start @{liberty.server} --clean" trust="true" />
+							</try>
+							<catch>
+							</catch>
+						</trycatch>
+					</sequential>
+				</for>
+			</sequential>
+		</for>
+	</target>
+
+	<target name="restartServers" depends="logging,stopServers,startServers" />
+
+	<!-- TARGET SPECIFICI PER BonusMobilita -->
+	<target name="restartServerBeneficiariAll" depends="logging,stopServerBeneficiariAll,startServerBeneficiariAll" />
+	<target name="stopServerBeneficiariAll" depends="logging,inputLibertyPassword">
+		<antcall target="-stopServers">
+			<param name="listHosts" value="mdawlplp01-01.srv.sogei.it,mdawlplp01-02.srv.sogei.it,mdawlplp01-03.srv.sogei.it,mdawlplp01-04.srv.sogei.it" />
+			<param name="listServers" value="BonusMobilita_srv1,BonusMobilita_srv2" />
+			<param name="liberty.password" value="${liberty.password}" />
+		</antcall>
+	</target>
+	<target name="startServerBeneficiariAll" depends="logging,inputLibertyPassword">
+		<antcall target="-startServers">
+			<param name="listHosts" value="mdawlplp01-01.srv.sogei.it,mdawlplp01-02.srv.sogei.it,mdawlplp01-03.srv.sogei.it,mdawlplp01-04.srv.sogei.it" />
+			<param name="listServers" value="BonusMobilita_srv1,BonusMobilita_srv2" />
+			<param name="liberty.password" value="${liberty.password}" />
+		</antcall>
+	</target>
+	<target name="restartServerEsercentiAll" depends="logging,stopServerEsercentiAll,startServerEsercentiAll" />
+	<target name="stopServerEsercentiAll" depends="logging,inputLibertyPassword">
+		<antcall target="-stopServers">
+			<param name="listHosts" value="mdawlplp01-01.srv.sogei.it,mdawlplp01-02.srv.sogei.it" />
+			<param name="listServers" value="BonusMobEsercenti_srv1" />
+			<param name="liberty.password" value="${liberty.password}" />
+		</antcall>
+	</target>
+	<target name="startServerEsercentiAll" depends="logging,inputLibertyPassword">
+		<antcall target="-startServers">
+			<param name="listHosts" value="mdawlplp01-01.srv.sogei.it,mdawlplp01-02.srv.sogei.it" />
+			<param name="listServers" value="BonusMobEsercenti_srv1" />
+			<param name="liberty.password" value="${liberty.password}" />
+		</antcall>
+	</target>
+	<!-- Target Specifici Per BonusMobilita -->
+
+	<target name="Sync-Configuration" depends="logging">
+
+	</target>
+
+	<target name="copyConfigFiles">
+		<scp todir="liberty:${liberty.password}@${host}:${servers.root.path}/${liberty-server}/apps" trust="true">
+			<fileset dir="${deploy.path.custom}">
+				<include name="**/*.ear" />
+				<include name="**/*.war" />
+			</fileset>
+		</scp>
+	</target>
+
+	<target name="copyjvmOptions">
+	</target>
+
+	<target name="copyServerEnv">
+	</target>
+
+	<target name="copyServerXml">
+	</target>
+</project>
+
+

@@ -1,0 +1,3280 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="Resources" default="default-target">
+	<taskdef resource="net/sf/antcontrib/antcontrib.properties">
+		<classpath>
+			<pathelement location="../ant-contrib/ant-contrib-1.0b3.jar" />
+		</classpath>
+	</taskdef>
+
+	<taskdef name="wsadmin" classname="com.ibm.websphere.ant.tasks.WsAdmin" />
+	<taskdef name="wsStopApp" classname="com.ibm.websphere.ant.tasks.StopApplication" />
+	<taskdef name="wsStartApp" classname="com.ibm.websphere.ant.tasks.StartApplication" />
+	<taskdef name="wsUninstallApp" classname="com.ibm.websphere.ant.tasks.UninstallApplication" />
+	<taskdef name="wsInstallApp" classname="com.ibm.websphere.ant.tasks.InstallApplication" />
+	<taskdef name="wsListApps" classname="com.ibm.websphere.ant.tasks.ListApplications" />
+
+
+	<!-- Configure Properties FOR WAS 8.5 or For WAS 9.0 -->
+	<target name="was85-conf">
+		<property file="installer_8.5.5.properties" />
+		<property name="resources.properties" value="installer_8.5.5.properties" />
+		<antcall target="-runConfig" />
+	</target>
+	<target name="was90-conf">
+		<property file="installer_9.0.0.properties" />
+		<property name="resources.properties" value="installer_9.0.0.properties" />
+		<antcall target="-runConfig" />
+	</target>
+	<target name="-runConfig" depends="initDmgrConf,info">
+		<echo> Execute this task ${config-tasks.choice}</echo>
+		<antcall target="${config-tasks.choice}" />
+	</target>
+
+	<target name="default-target" depends="versionInfo">
+		<echo>   
+   You need to specify installation binaries version:
+   1) WebSphere 8.5.5 
+   2) WebSPhere 9.0.0
+      </echo>
+		<input message=" Insert one of the below task" validargs="1,2" addproperty="default-config-tasks.choice" />
+		<if>
+			<and>
+				<isset property="default-config-tasks.choice" />
+				<equals arg1="${default-config-tasks.choice}" arg2="1" />
+			</and>
+			<then>
+				<antcall target="was85-conf" />
+			</then>
+		</if>
+		<if>
+			<and>
+				<isset property="default-config-tasks.choice" />
+				<equals arg1="${default-config-tasks.choice}" arg2="2" />
+			</and>
+			<then>
+				<antcall target="was90-conf" />
+			</then>
+		</if>
+
+
+	</target>
+	<!-- -->
+	<target name="-preconfig">
+		<property name="resources.properties" value="Resources.properties" />
+
+	</target>
+	<target name="tuning" depends="-preconfig">
+		<echo>
+      -----------------------------------------------
+         Tuning Function
+      -----------------------------------------------
+      1) Tuning DataSources  (v 1.0)
+      2) Tuning Work Manager (v 1.0)
+      3) Tuning JVM          (v 1.0)
+       </echo>
+		<input message=" Insert one of the below task" validargs="1,2,3" addproperty="tuning-tasks.choice" />
+		<if>
+			<and>
+				<isset property="tuning-tasks.choice" />
+				<equals arg1="${tuning-tasks.choice}" arg2="1" />
+			</and>
+			<then>
+				<antcall target="tuning-dataSources" />
+			</then>
+		</if>
+		<if>
+			<and>
+				<isset property="tuning-tasks.choice" />
+				<equals arg1="${tuning-tasks.choice}" arg2="2" />
+			</and>
+			<then>
+				<antcall target="tuning-workmanager" />
+			</then>
+		</if>
+		<if>
+			<and>
+				<isset property="tuning-tasks.choice" />
+				<equals arg1="${tuning-tasks.choice}" arg2="3" />
+			</and>
+			<then>
+				<antcall target="tuning-jvm" />
+			</then>
+		</if>
+
+	</target>
+	<target name="tuning-dataSources" depends="logging, inputWSAdminData">
+		<echo> The File used to Tuning Enviroments DataSources is located on path ${FRAMEWORK_HOME}/properties/DataSources.properties
+                  Customize it befor launch this task.
+            </echo>
+		<input message="Do you want to Proceed? [yes,no]  " addproperty="input.continue" />
+		<if>
+			<and>
+				<isset property="input.continue" />
+				<equals arg1="${input.continue}" arg2="yes" />
+			</and>
+			<then>
+				<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+					<arg line=" -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info -username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/tuning/TuningDatasource.py ../properties/DataSources.properties ${remoteScope}" />
+				</exec>
+				<echo>Result: ${result}</echo>
+			</then>
+		</if>
+	</target>
+	<target name="tuning-workmanager" depends="logging, inputWSAdminData">
+
+	</target>
+	<target name="tuning-jvm" depends="logging, inputWSAdminData">
+	</target>
+	<target name="info" depends="versionInfo">
+		<echo>
+         Tell me working ==  ${resources.properties}
+         DeployManagerBin= ${DeploymentManagerBin}
+         Targets:
+         -----------------------------------------------
+         Create Function
+         -----------------------------------------------
+         # createActivationSpecs (v 1.0)
+         # createConnFactories (v 1.0)
+         # createDataSources (v 1.0)
+         # createJDBCProviders (v 1.0)
+         # createNameSpaceBindings (v 1.0)
+         # createQueues (v 1.0) 
+         # createURLs (v 1.0)
+         # createSharedLibs (v 1.3)
+         # createTopics (v. 1.0)
+         # createWebSphereVariables (V. 1.1)
+         # createStaticClusters (beta version)
+         # createDynamicClusters (beta version)
+         # createUsersAndGroup (v 1.0)
+         # MapWebModuleToWebServer (v. 1.0)
+
+         -----------------------------------------------
+         Read Function
+         -----------------------------------------------
+         # readActivationSpecs (v 1.0)
+         # readConnFactories (v 1.0)
+         # readDataSources (v 1.0)
+         # readJDBCProviders (v 1.0)
+         # readNameSpaceBindings (v 1.0)
+         # readQueues (v 1.0)
+         # readURLs (v 1.0)
+         # readSharedLibs (v 1.3)
+         # readASPorts (v 1.0)
+         # readTopics (v 1.0)
+         # readWebSphereVariables (V1.0)
+         # readALL (v 1.0)
+
+         -----------------------------------------------
+         Framework Function
+         -----------------------------------------------
+         # Release (v 1.0)
+         # copyResources (v 1.0)
+         # markResourcesProcessed (v 1.0)
+         # markResourcesNotProcessed (v 1.0)
+         # clearInput (v 1.0)
+         # clearOutput (v 1.0)
+         # ChangeDmgrTarget (v 1.0)
+         # ClearDmgrTarget (v 1.0)
+         # ChangeDmgrSource (v 1.0)
+         # ClearDmgrSorce (v 1.0)
+         # AllowDeleteIfExist (v 1.0) (Allow to delete resources if already exist)
+         # DenyDeleteIfExist (v 1.0) (Deny to delete resources if already exist) 
+         # manual (beta version)
+
+         -----------------------------------------------
+         Utility Function
+         -----------------------------------------------
+         # applyJDKLevel (v 1.1)
+         # basicTuning (v 1.4)
+         # customizeFiles (v 1.0)
+         # addActivSpecCustomProps (v 1.4) 
+         # addJVMCustomPropertybyCluster (v 1.0)
+         # backupConfiguration (v 1.0)
+         # deployApp (beta version)
+         # applyWCProperties (v 1.0)
+         # RenewPluginCertificate (v 1.0)
+         # FixChiperLevel (v 1.0)
+         # setupXDDefaultSSLSettings (v 1.0) (Only when use OdrLib)
+         # setupUnrestrictedPolicyFiles (v. 1.2)
+         # checkMonitorPolicy (v 1.1)
+         # commandLine (on going)
+
+         -----------------------------------------------
+         730 Precompilata Function
+         -----------------------------------------------
+         # ChangeDmgrTarget730 (v 1.0)
+         # ChangeDmgrSource730 (v 1.0)
+         -----------------------------------------------
+      </echo>
+		<input message=" Insert one of the below task" addproperty="config-tasks.choice" />
+	</target>
+
+
+	<target name="logging">
+		<record name="build.log" loglevel="debug" append="true" />
+	</target>
+
+
+	<target name="versionInfo">
+		<echo>
+		</echo>
+		<echo>#################################</echo>
+		<echo> Framework Version ${version.level}</echo>
+		<echo> Build Date ${build.date}</echo>
+		<echo> For more information launch  Release Task (./run.sh Release)</echo>
+		<echo>#################################</echo>
+		<echo>
+		</echo>
+	</target>
+	<target name="Release">
+		<echo>
+	Changing V 6.0
+	         - Bug Fixing  
+			   - Modified Create Queue (persistence attribute)
+			   - Add checkMonitorPolicy Task in Utility Task
+	Changing V 5.0
+			  -  Bug Fixing		
+	Changing V 4.0
+	        -  Change Framework Installation Procedure 	
+	 Changing V 4.6
+	        - Modified Basic Tuning input Messages
+	   Changing V 3.5
+	        - Bug Fixing
+	   Changing V 3.4
+	        - Bug Fixing
+	   Changing V 3.3
+	       - Bug Fixing
+	   Changing V 3.2
+	     - Modified INstallation Task (setupEnviroments task)
+	   Changing V 3.1
+	         - introduce monitor script showAllStats.py
+	   New Version V 3.0 
+	         - Introduting Intallation Pattern
+	         - Modified Framework Directory structure
+	   Changing V. 2.6
+	        - Modified system Logging (introduce TRACE level)
+	   Changing V. 2.5
+	      - Added to all foreach method the attribute inheritall='true' (level:HIGH)
+	   Changing V. 2.4.2
+	      - change method setupCustomProperty in utility.py  
+	   Changing V. 2.4.1
+	      - added new task # RemoveWebModuleToWebServer # 
+	      - added new task # AddWebModuleToWebServer # 
+	      - Bug Fixing
+	   Changing V. 2.4.0
+	      - Added SetupHTTPOnlyCookiesProps option for basicTuning Task
+	      - Added ApplyJDKLevel option for basicTuning Task
+	      - Bug Fixing
+	   Changing V. 2.3.0
+	      - Fix Bug on Read/Write URL
+	      - FIX Bug on read/write Topics
+	      - Add Features to PropagateCPropsAppServ (Only for DCA) 
+	   Changing V. 2.2.0
+	      - Added Function setupXDDefaultSSLSettings
+	   Changing V. 2.1.0
+	      - Added new Function # createUsersAndGroup #
+	      - Modified script AddCustomPropertiesAS (added "ALL" choose for setup custom properties)
+	   Changing V. 2.0.0
+	       - Adding new Function changeChipersLevel (used to change Chiper Level to pre-existing SSLConfiguration)
+	        - Adding new Function renewPluginPersonalCertificates (increase Expiration date for personal certificate in plugin-key.kdb)
+	   Changing V. 1.8.0
+	        - Bug Fixing
+	   Changing V. 1.7.4
+	        - Modify Method listSharedLib in ReadSharedLibrary to Fix Bug      
+	   Changing V. 1.7.3
+	        - Modify Task applyWCProperties (Now is possible choose the property/value) 
+	   Changing V. 1.7.2
+	        - Add New Tasks (ActivateDeleteIfExist and DenyDeleteIfExist)
+	   Changing V. 1.7.1
+	        - Modify CreateConnectionFactory to solve a Bug (AuthDataAlias)
+	   Changing V. 1.7.0
+	        - Added new Funcion addActivSpecCustomProps
+	        - Modify  CreateConnectionFactory Function adding connectionNameList attribute
+	        - Bug Fixing
+	   Changing V. 1.6.6
+	        - modify build.xml 
+	   Changing V. 1.6.5
+	        - correct tag clearInput-all in build.xml     
+	   Changing V. 1.6.4
+	       -  Add Port Management in ClearInput and ClearOutput Target
+	   Changing V. 1.6.3
+	        - Change Resource.properties sintax
+	   Changing V. 1.6.2
+	       - Change menù Task For 730 Enviroments
+	       - Bug Fixing  
+	    Changing V. 1.6.1
+	        - Add ReadPorts for Servers
+	        - Bug Fixing 
+	   Changing V. 1.6.0
+	        - Add Runtime Trace Configurator
+	        - Add New Logging System
+	        - Remove unused component
+	        - Bug Fixing
+	   Changing V. 1.5.9
+	        - Bug Fixing
+	   Changing V. 1.5.8
+	        - Bug Fixing
+	   Changing V. 1.5.7 
+	        - Bug Fixing
+	   Changing V. 1.5.6
+	       - Add RFH2 to Read and CreateQueue
+	    Changing V. 1.5.5
+	       - Add Informix DataSources Custom Properties
+	       - Add commandLine target
+	   Changing V. 1.5.4
+	       - Add Informix DataSources
+	   Changing V. 1.5.3
+	       - Add ApplyWCProperties to add webcontainer properties on different scope 
+	   Changing V. 1.5.2
+	       - Modificato la gestione dei deployment target nel file AdminApp.py
+	       - Inserito il target di modifca del Dmgr Source
+	       - Inserito il target di modifca del Dmgr Target
+	   Changing V. 1.5.1
+	       - Modificato lo script DeployApplication.py
+	       - Modificata la gestione del logging
+	       - Modificata la nomenclatura dei DynamicCluster
+	   Changing V. 1.5.0
+	       - Aggiunta la gestione del Container authAlias nei datasource
+	       - Modificata la gestione del logging
+	       - Modificato il menu ANT
+	       - Aggiunta una funzione di utility di replace di valori (HiddenRename) 
+	       - Aggiunto il WARNING per la creazione dei NameSpace con "/" nel nome
+	       - Bug Fixing
+	   Version 1.0
+	       - Basic Release
+	      </echo>
+	</target>
+	<target name="commandLine">
+		<echo>GeneralCommand: ${DeploymentManagerBin}/wsadmin.sh -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries={FrameworkPath}/scripts/info -username ${destinationAdminID} -password ${destinationAdminPasswd} -f {FrameworkPath}/scripts/resources/{NameScripts}.py {pathOutputFiles} {scope}</echo>
+		<echo>
+      Which target do you want to explain? 
+      -----------------------------------------------
+      Create Function
+      -----------------------------------------------
+           1  createActivationSpecs
+           2  createConnFactories
+           3  createDataSources
+           4  createJDBCProviders
+           5  createNameSpaceBindings
+           6  createQueues
+           7  createURLs
+           8  createSharedLibs
+
+      -----------------------------------------------
+      Read Function
+      -----------------------------------------------
+           11 readActivationSpecs
+           12 readConnFactories
+           13 readDataSources
+           14 readJDBCProviders
+           15 readNameSpaceBindings
+           16 readQueues
+           17 readURLs
+           18 readSharedLibs  
+
+      </echo>
+		<input message=" " validargs="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18" addproperty="commandline.choice" />
+
+		<if>
+			<and>
+				<isset property="commandline.choice" />
+				<equals arg1="${commandline.choice}" arg2="1" />
+			</and>
+			<then>
+				<echo>${DeploymentManagerBin}/wsadmin.sh -host {destinationHost} -port {destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries={FrameworkPath}/scripts/info -username {destinationAdminID} -password {destinationAdminPasswd} -f {FrameworkPath}/scripts/resources/CreateActivationSpecs.py $targetDataFile</echo>
+			</then>
+		</if>
+		<if>
+			<and>
+				<isset property="commandline.choice" />
+				<equals arg1="${commandline.choice}" arg2="2" />
+			</and>
+			<then>
+				<echo>${DeploymentManagerBin}/wsadmin.sh -host {destinationHost} -port {destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries={FrameworkPath}/scripts/info -username {destinationAdminID} -password {destinationAdminPasswd} -f {FrameworkPath}/scripts/resources/CreateConnectionFactory.py $targetDataFile</echo>
+			</then>
+		</if>
+		<if>
+			<and>
+				<isset property="commandline.choice" />
+				<equals arg1="${commandline.choice}" arg2="3" />
+			</and>
+			<then>
+				<echo>{DeploymentManagerBin}/wsadmin.sh -host {destinationHost} -port {destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries={FrameworkPath}/scripts/info -username {destinationAdminID} -password {destinationAdminPasswd} -f {FrameworkPath}/scripts/resources/CreateDatasource.py $targetDataFile</echo>
+			</then>
+		</if>
+		<if>
+			<and>
+				<isset property="commandline.choice" />
+				<equals arg1="${commandline.choice}" arg2="4" />
+			</and>
+			<then>
+				<echo>{DeploymentManagerBin}/wsadmin.sh -host {destinationHost} -port {destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries={FrameworkPath}/scripts/info -username {destinationAdminID} -password {destinationAdminPasswd} -f {FrameworkPath}/scripts/resources/CreateJDBCProvider.py $targetDataFile</echo>
+			</then>
+		</if>
+		<if>
+			<and>
+				<isset property="commandline.choice" />
+				<equals arg1="${commandline.choice}" arg2="5" />
+			</and>
+			<then>
+				<echo>{DeploymentManagerBin}/wsadmin.sh -host {destinationHost} -port {destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries={FrameworkPath}/scripts/info -username {destinationAdminID} -password {destinationAdminPasswd} -f {FrameworkPath}/scripts/resources/CreateNameSpaceBinding.py $targetDataFile</echo>
+			</then>
+		</if>
+		<if>
+			<and>
+				<isset property="commandline.choice" />
+				<equals arg1="${commandline.choice}" arg2="6" />
+			</and>
+			<then>
+				<echo>{DeploymentManagerBin}/wsadmin.sh -host {destinationHost} -port {destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries={FrameworkPath}/scripts/info -username {destinationAdminID} -password {destinationAdminPasswd} -f {FrameworkPath}/scripts/resources/CreateQueue.py $targetDataFile </echo>
+			</then>
+		</if>
+		<if>
+			<and>
+				<isset property="commandline.choice" />
+				<equals arg1="${commandline.choice}" arg2="7" />
+			</and>
+			<then>
+				<echo>{DeploymentManagerBin}/wsadmin.sh -host {destinationHost} -port {destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries={FrameworkPath}/scripts/info -username {destinationAdminID} -password {destinationAdminPasswd} -f {FrameworkPath}/scripts/resources/CreateURLS.py $targetDataFile </echo>
+			</then>
+		</if>
+		<if>
+			<and>
+				<isset property="commandline.choice" />
+				<equals arg1="${commandline.choice}" arg2="8" />
+			</and>
+			<then>
+				<echo>{DeploymentManagerBin}/wsadmin.sh -host {destinationHost} -port {destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries={FrameworkPath}/scripts/info -username {destinationAdminID} -password {destinationAdminPasswd} -f {FrameworkPath}/scripts/resources/CreateSharedLib.py $targetDataFile </echo>
+			</then>
+		</if>
+		<if>
+			<and>
+				<isset property="commandline.choice" />
+				<equals arg1="${commandline.choice}" arg2="11" />
+			</and>
+			<then>
+				<echo>{DeploymentManagerBin}/wsadmin.sh -host {destinationHost} -port {destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries={FrameworkPath}/scripts/info -username {destinationAdminID} -password {destinationAdminPasswd} -f {FrameworkPath}/scripts/resources/ReadActivationSpecs.py {pathOutputFiles} {scope} </echo>
+			</then>
+		</if>
+		<if>
+			<and>
+				<isset property="commandline.choice" />
+				<equals arg1="${commandline.choice}" arg2="12" />
+			</and>
+			<then>
+				<echo>{DeploymentManagerBin}/wsadmin.sh -host {destinationHost} -port {destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries={FrameworkPath}/scripts/info -username {destinationAdminID} -password {destinationAdminPasswd} -f {FrameworkPath}/scripts/resources/ReadConnectionFactory.py {pathOutputFiles} {scope} </echo>
+			</then>
+		</if>
+		<if>
+			<and>
+				<isset property="commandline.choice" />
+				<equals arg1="${commandline.choice}" arg2="13" />
+			</and>
+			<then>
+				<echo>{DeploymentManagerBin}/wsadmin.sh -host {destinationHost} -port {destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries={FrameworkPath}/scripts/info -username {destinationAdminID} -password {destinationAdminPasswd} -f {FrameworkPath}/scripts/resources/ReadDataSources.py {pathOutputFiles} {scope} </echo>
+			</then>
+		</if>
+		<if>
+			<and>
+				<isset property="commandline.choice" />
+				<equals arg1="${commandline.choice}" arg2="14" />
+			</and>
+			<then>
+				<echo>{DeploymentManagerBin}/wsadmin.sh -host {destinationHost} -port {destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries={FrameworkPath}/scripts/info -username {destinationAdminID} -password {destinationAdminPasswd} -f {FrameworkPath}/scripts/resources/ReadJDBCProvider.py {pathOutputFiles} {scope} </echo>
+			</then>
+		</if>
+
+		<if>
+			<and>
+				<isset property="commandline.choice" />
+				<equals arg1="${commandline.choice}" arg2="15" />
+			</and>
+			<then>
+				<echo>{DeploymentManagerBin}/wsadmin.sh -host {destinationHost} -port {destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries={FrameworkPath}/scripts/info -username {destinationAdminID} -password {destinationAdminPasswd} -f {FrameworkPath}/scripts/resources/ReadNameSpaceBinding.py {pathOutputFiles} {scope} </echo>
+			</then>
+		</if>
+
+		<if>
+			<and>
+				<isset property="commandline.choice" />
+				<equals arg1="${commandline.choice}" arg2="16" />
+			</and>
+			<then>
+				<echo>{DeploymentManagerBin}/wsadmin.sh -host {destinationHost} -port {destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries={FrameworkPath}/scripts/info -username {destinationAdminID} -password {destinationAdminPasswd} -f {FrameworkPath}/scripts/resources/ReadQueues.py {pathOutputFiles} {scope} </echo>
+			</then>
+		</if>
+
+		<if>
+			<and>
+				<isset property="commandline.choice" />
+				<equals arg1="${commandline.choice}" arg2="17" />
+			</and>
+			<then>
+				<echo>{DeploymentManagerBin}/wsadmin.sh -host {destinationHost} -port {destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries={FrameworkPath}/scripts/info -username {destinationAdminID} -password {destinationAdminPasswd} -f {FrameworkPath}/scripts/resources/ReadURL.py {pathOutputFiles} {scope} </echo>
+			</then>
+		</if>
+
+
+		<if>
+			<and>
+				<isset property="commandline.choice" />
+				<equals arg1="${commandline.choice}" arg2="18" />
+			</and>
+			<then>
+				<echo>{DeploymentManagerBin}/wsadmin.sh -host {destinationHost} -port {destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries={FrameworkPath}/scripts/info -username {destinationAdminID} -password {destinationAdminPasswd} -f {FrameworkPath}/scripts/resources/ReadSharedLibrary.py {pathOutputFiles} {scope} </echo>
+			</then>
+		</if>
+	</target>
+
+
+	<target name="manual" description="Get user input">
+		<echo>
+        (Work in Progress) 
+        Which target do you want to explain? 
+               -----------------------------------------------
+               Create Function
+               -----------------------------------------------
+                    1  createActivationSpecs
+                    2  createConnFactories
+                    3  createDataSources
+                    4  createJDBCProviders
+                    5  createNameSpaceBindings
+                    6  createQueues
+                    7  createURLs
+               8  createTopics
+                    9  createSharedLibs
+                    10 createStaticClusters
+                    11 createDynamicClusters
+               -----------------------------------------------
+               Read Function
+               -----------------------------------------------
+                    12 readActivationSpecs
+                    13 readConnFactories
+                    14 readDataSources
+                    15 readJDBCProviders
+                    16 readNameSpaceBindings
+                    17 readQueues
+                    18 readURLs
+                    19 readTopics
+               20 readSharedLibs
+                    21 readALL 
+               -----------------------------------------------
+               Framework Function
+               -----------------------------------------------
+                    22 copyResources
+                    23 markResourcesProcessed
+                    24 markResourcesNotProcessed
+                    25 clearInput
+                    26 clearOutput
+                    27 ChangeDmgrTarget   
+                    28 ClearDmgrTarget
+                    29 ChangeDmgrSource
+                    30 ClearDmgrSorce
+                    31 AllowDeleteIfExist (Allow to delete resources if already exist)
+                    32 DenyDeleteIfExist (Deny to delete resources if already exist)
+                -----------------------------------------------
+                Utility Function
+                -----------------------------------------------
+                    32 applyJDKLevel
+                    33 basicTuning
+                    34 customizeFiles
+                    35 addJVMCustomPropertybyCluster
+                    36 backupConfiguration
+                   37 Apply WebContainer Properties
+                -----------------------------------------------
+
+      </echo>
+		<input message=" " validargs="1,2,3,4,5,6,7,9,10,11,32" addproperty="man.choice" />
+		<loadfile property="file" srcfile="${ManualDir}/manual-${man.choice}.txt" />
+		<echo message="${file}" />
+	</target>
+
+
+	<target name="setTraceLevel" depends="logging">
+		<echo>
+   Which Type of Trace do you want to Apply?
+   COD  DESCRIPTION
+   -----------------------------------------------
+   Web  Webcontainer
+   Ejb  Ejb Container
+   Cpl Connection pooling problems
+   -----------------------------------------------                  
+      </echo>
+		<input message=" " validargs="Web,Ejb,Cpl" addproperty="setTraceLevel.choice" />
+		<if>
+			<equals arg1="${setTraceLevel.choice}" arg2="Web" />
+			<then>
+				<property name="trace.choose" value="*=info:com.ibm.ws.webcontainer*=all:com.ibm.wsspi.webcontainer*=all:HTTPChannel=all:GenericBNF=all" />
+			</then>
+			<elseif>
+				<equals arg1="${setTraceLevel.choice}" arg2="Ejb" />
+				<then>
+					<property name="trace.choose" value="*=info:EJBContainer=all:PMGR=all:JPA=all:openjpa=all:Injection=all" />
+				</then>
+			</elseif>
+			<elseif>
+				<equals arg1="${setTraceLevel.choice}" arg2="Cpl" />
+				<then>
+					<property name="trace.choose" value="*=info:WAS.j2c=all:RRA=all:Transaction=all:Messaging=all:JMSApi=all" />
+				</then>
+			</elseif>
+
+			<else>
+				<echo> ciao </echo>
+			</else>
+		</if>
+		<antcall target="-setTraceLevel" />
+	</target>
+
+	<target name="createUsersAndGroup" description="Create new Users" depends="logging">
+		<echo> The File used to create users and Group is located on path ${FRAMEWORK_HOME}/scripts/standalone/userConfiguration.txt
+            Customize it befor launch this task.
+      </echo>
+		<input message="Do you want to Proceed? [yes,no]  " addproperty="input.continue" />
+		<if>
+			<and>
+				<isset property="input.continue" />
+				<equals arg1="${input.continue}" arg2="yes" />
+			</and>
+			<then>
+				<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+					<arg line=" -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info -username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/standalone/CreateGroupsAndUsers.py ../scripts/standalone/CreateGroupsAndUsers.config" />
+				</exec>
+				<echo>Result: ${result}</echo>
+
+			</then>
+		</if>
+	</target>
+	<target name="RemoveWebModuleToWebServer" description="Remove WebModule To WebServer" depends="logging">
+		<echo> The File used to Remove Web Module To WebServer is located on path ${FRAMEWORK_HOME}/scripts/standalone/RemoveWebModuleToWebServer.config
+               Customize it befor launch this task.
+      </echo>
+		<input message="Do you want to Proceed? [yes,no]  " addproperty="input.continue" />
+		<if>
+			<and>
+				<isset property="input.continue" />
+				<equals arg1="${input.continue}" arg2="yes" />
+			</and>
+			<then>
+				<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+					<arg line=" -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info -username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/standalone/RemoveWebModuleToWebServer.py ../scripts/standalone/RemoveWebModuleToWebServer.config" />
+				</exec>
+				<echo>Result: ${result}</echo>
+
+			</then>
+		</if>
+	</target>
+	<target name="MapWebModuleToWebServer" description="Map Specific  WebModule To specific WebServer" depends="logging">
+		<echo> The File used to Map Web Module To WebServer is located on path ${FRAMEWORK_HOME}/scripts/standalone/MapWebModuleToWebServer.config
+                  Customize it befor launch this task.
+		            Guide: 
+		                 - webServersList:           A list where you can add WebServer Name to map 
+		                 - appList:                  The List of Application that you want to updaye ('ALL' or a list of names) 
+		                 - webserverSource=''        Only for Internal USE
+		                 - webServerTarget='NONE'    Only for Internal USE
+		                 - webServerListToRemove:    The List of WebServer that you want to remove from Application Mapping  
+      </echo>
+		<input message="Do you want to Proceed? [yes,no]  " addproperty="input.continue" />
+		<if>
+			<and>
+				<isset property="input.continue" />
+				<equals arg1="${input.continue}" arg2="yes" />
+			</and>
+			<then>
+				<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+					<arg line=" -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info -username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/standalone/MapWebModuleToWebServer.py ../scripts/standalone/MapWebModuleToWebServer.config" />
+				</exec>
+				<echo>Result: ${result}</echo>
+
+			</then>
+		</if>
+	</target>
+	<target name="-setTraceLevel" depends="logging,inputWSAdminDataForTrace" description="Apply Trace Specification">
+		<echo>Set Trace ${trace.choose} to Target Enviroment ${destinationHost} </echo>
+		<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+			<arg line="-lang jython -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info -f ../scripts/standalone/ConfigureRuntimeTraceLevel.py ${remoteTraceScope} ${trace.choose} -username ${destinationAdminID} -password ${destinationAdminPasswd}" />
+		</exec>
+		<echo>Result: ${result}</echo>
+	</target>
+
+
+	<target name="backupConfiguration" depends="-readBackupArchiveName, readALL">
+		<tar destfile="../${name.backupArchive}.tar" basedir="../output" />
+	</target>
+	<target name="echoCustom">
+		<echo message="${line}" />
+	</target>
+	<target name="HiddenRename">
+		<input message="Input Source String " addproperty="input.sourceString" />
+		<input message="Input Destination String" addproperty="input.destinationString" />
+		<foreach target="-HiddenRenameInFile" param="theFile" inheritall="true">
+			<path>
+				<fileset dir="${ResourcesDir}">
+					<include name="**/*.${originalExt}" />
+				</fileset>
+			</path>
+			<param name="input.sourceString" value="${input.sourceString}" />
+			<param name="input.destinationString" value="${input.destinationString}" />
+		</foreach>
+	</target>
+
+
+	<target name="ChangeDmgrTarget" depends="logging">
+		<echo message="INFO equired to connect to Deployment Manager when creating new resources" />
+		<input message="Input Dmgr Host [Default localhost]" addproperty="input.dmgr.host" defaultvalue="localhost" />
+		<input message="Input Dmgr Port [Default: 8879" addproperty="input.dmgr.port" defaultvalue="8879" />
+		<input message="Input Admin User [Default admin]" addproperty="input.admin.user" defaultvalue="admin" />
+		<input message="Input Admin Password [Default passowrd]" addproperty="input.admin.password" defaultvalue="password" />
+		<replaceregexp file="${resources.properties}" match="destinationHost=(.*)" replace="destinationHost=${input.dmgr.host}" byline="true" />
+		<replaceregexp file="${resources.properties}" match="destinationSoapPort=(.*)" replace="destinationSoapPort=${input.dmgr.port}" byline="true" />
+		<replaceregexp file="${resources.properties}" match="destinationAdminID=(.*)" replace="destinationAdminID=${input.admin.user}" byline="true" />
+		<replaceregexp file="${resources.properties}" match="destinationAdminPasswd=(.*)" replace="destinationAdminPasswd=${input.admin.password}" byline="true" />
+		<echo message="${resources.properties} Modified" />
+	</target>
+
+	<target name="ClearDmgrTarget" depends="logging">
+		<echo message="Set Dmgr Destination Parameter to blank">
+		</echo>
+		<replaceregexp file="${resources.properties}" match="destinationHost=(.*)" replace="destinationHost=" byline="true" />
+		<replaceregexp file="${resources.properties}" match="destinationSoapPort=(.*)" replace="destinationSoapPort=" byline="true" />
+		<replaceregexp file="${resources.properties}" match="destinationAdminID=(.*)" replace="destinationAdminID=" byline="true" />
+		<replaceregexp file="${resources.properties}" match="destinationAdminPasswd=(.*)" replace="destinationAdminPasswd=" byline="true" />
+	</target>
+
+	<target name="ChangeDmgrSource" depends="logging">
+		<echo message="INFO equired to connect to Deployment Manager when read new resources" />
+		<input message="Input Dmgr Host [Default localhost]" addproperty="input.dmgr.host" defaultvalue="localhost" />
+		<input message="Input Dmgr Port [Default: 8879" addproperty="input.dmgr.port" defaultvalue="8879" />
+		<input message="Input Admin User [Default admin]" addproperty="input.admin.user" defaultvalue="admin" />
+		<input message="Input Admin Password [Default passowrd]" addproperty="input.admin.password" defaultvalue="password" />
+		<replaceregexp file="${resources.properties}" match="remoteHost=(.*)" replace="remoteHost=${input.dmgr.host}" byline="true" />
+		<replaceregexp file="${resources.properties}" match="remoteSoapPort=(.*)" replace="remoteSoapPort=${input.dmgr.port}" byline="true" />
+		<replaceregexp file="${resources.properties}" match="remoteAdminID=(.*)" replace="remoteAdminID=${input.admin.user}" byline="true" />
+		<replaceregexp file="${resources.properties}" match="remoteAdminPasswd=(.*)" replace="remoteAdminPasswd=${input.admin.password}" byline="true" />
+		<echo message="${resources.properties} Modified" />
+	</target>
+
+
+	<target name="ChangeDmgrSource730" depends="logging">
+		<echo message="INFO Required to connect to Deployment Manager when read new resources" />
+		<echo>
+      Witch enviroment do you want to Read?
+      -----------------------------------------------
+      A. Dmgr-VAl01
+      B. Dmgr-Val02
+      C. Dmgr-Prod01
+      D. Dmgr-Prod02
+      E. Dmgr-Prod03
+      -----------------------------------------------                  
+      </echo>
+		<input message=" " validargs="A,B,C,D,E" addproperty="dmgrSource.730" />
+		<if>
+			<equals arg1="${dmgrSource.730}" arg2="A" />
+			<then>
+				<echo>Set Source To Validazione Cella 01</echo>
+				<replaceregexp file="${resources.properties}" match="remoteHost=(.*)" replace="remoteHost=26.0.129.95" byline="true" />
+				<replaceregexp file="${resources.properties}" match="remoteSoapPort=(.*)" replace="remoteSoapPort=8879" byline="true" />
+				<replaceregexp file="${resources.properties}" match="remoteAdminID=(.*)" replace="remoteAdminID=wasdeploy" byline="true" />
+				<replaceregexp file="${resources.properties}" match="remoteAdminPasswd=(.*)" replace="remoteAdminPasswd=wasdepl0y" byline="true" />
+			</then>
+			<elseif>
+				<equals arg1="${dmgrSource.730}" arg2="B" />
+				<then>
+					<echo>Set Source To Validazione Cella 02</echo>
+					<replaceregexp file="${resources.properties}" match="remoteHost=(.*)" replace="remoteHost=26.0.129.95" byline="true" />
+					<replaceregexp file="${resources.properties}" match="remoteSoapPort=(.*)" replace="remoteSoapPort=8880" byline="true" />
+					<replaceregexp file="${resources.properties}" match="remoteAdminID=(.*)" replace="remoteAdminID=wasdeploy" byline="true" />
+					<replaceregexp file="${resources.properties}" match="remoteAdminPasswd=(.*)" replace="remoteAdminPasswd=wasdepl0y" byline="true" />
+				</then>
+			</elseif>
+			<elseif>
+				<equals arg1="${dmgrSource.730}" arg2="C" />
+				<then>
+					<echo>Set Source To Produzione Cella 01</echo>
+					<replaceregexp file="${resources.properties}" match="remoteHost=(.*)" replace="remoteHost=26.0.129.71" byline="true" />
+					<replaceregexp file="${resources.properties}" match="remoteSoapPort=(.*)" replace="remoteSoapPort=8879" byline="true" />
+					<replaceregexp file="${resources.properties}" match="remoteAdminID=(.*)" replace="remoteAdminID=wasdeploy" byline="true" />
+					<replaceregexp file="${resources.properties}" match="remoteAdminPasswd=(.*)" replace="remoteAdminPasswd=wasdepl0y" byline="true" />
+				</then>
+			</elseif>
+			<elseif>
+				<equals arg1="${dmgrSource.730}" arg2="D" />
+				<then>
+					<echo>Set Source To Produzione Cella 02</echo>
+					<replaceregexp file="${resources.properties}" match="remoteHost=(.*)" replace="remoteHost=26.0.129.82" byline="true" />
+					<replaceregexp file="${resources.properties}" match="remoteSoapPort=(.*)" replace="remoteSoapPort=8879" byline="true" />
+					<replaceregexp file="${resources.properties}" match="remoteAdminID=(.*)" replace="remoteAdminID=wasdeploy" byline="true" />
+					<replaceregexp file="${resources.properties}" match="remoteAdminPasswd=(.*)" replace="remoteAdminPasswd=wasdepl0y" byline="true" />
+				</then>
+			</elseif>
+			<elseif>
+				<equals arg1="${dmgrSource.730}" arg2="E" />
+				<then>
+					<echo>Set Source To Produzione Cella 03</echo>
+					<replaceregexp file="${resources.properties}" match="remoteHost=(.*)" replace="remoteHost=26.0.129.93" byline="true" />
+					<replaceregexp file="${resources.properties}" match="remoteSoapPort=(.*)" replace="remoteSoapPort=8879" byline="true" />
+					<replaceregexp file="${resources.properties}" match="remoteAdminID=(.*)" replace="remoteAdminID=wasdeploy" byline="true" />
+					<replaceregexp file="${resources.properties}" match="remoteAdminPasswd=(.*)" replace="remoteAdminPasswd=wasdepl0y" byline="true" />
+				</then>
+			</elseif>
+			<else>
+				<echo> No Correct choose done </echo>
+			</else>
+		</if>
+		<echo message="Resource.properties Modified" />
+	</target>
+	<target name="ChangeDmgrTarget730" depends="logging">
+		<echo message="INFO Required to connect to Deployment Manager when Create new resources" />
+		<echo>
+         Witch enviroment do you want to Read?
+         -----------------------------------------------
+         A. Dmgr-VAl01
+         B. Dmgr-Val02
+         C. Dmgr-Prod01
+         D. Dmgr-Prod02
+         E. Dmgr-Prod03
+         -----------------------------------------------                  
+      </echo>
+		<input message=" " validargs="A,B,C,D,E" addproperty="dmgrTarget.730" />
+		<if>
+			<equals arg1="${dmgrTarget.730}" arg2="A" />
+			<then>
+				<echo>Set Target To Validazione Cella 01</echo>
+				<replaceregexp file="${resources.properties}" match="destinationHost=(.*)" replace="destinationHost=26.0.129.95" byline="true" />
+				<replaceregexp file="${resources.properties}" match="destinationSoapPort=(.*)" replace="destinationSoapPort=8879" byline="true" />
+				<replaceregexp file="${resources.properties}" match="destinationAdminID=(.*)" replace="destinationAdminID=wasdeploy" byline="true" />
+				<replaceregexp file="${resources.properties}" match="destinationAdminPasswd=(.*)" replace="destinationAdminPasswd=wasdepl0y" byline="true" />
+			</then>
+			<elseif>
+				<equals arg1="${dmgrTarget.730}" arg2="B" />
+				<then>
+					<echo>Set Target To Validazione Cella 02</echo>
+					<replaceregexp file="${resources.properties}" match="destinationHost=(.*)" replace="destinationHost=26.0.129.95" byline="true" />
+					<replaceregexp file="${resources.properties}" match="destinationSoapPort=(.*)" replace="destinationSoapPort=8880" byline="true" />
+					<replaceregexp file="${resources.properties}" match="destinationAdminID=(.*)" replace="destinationAdminID=wasdeploy" byline="true" />
+					<replaceregexp file="${resources.properties}" match="destinationAdminPasswd=(.*)" replace="destinationAdminPasswd=wasdepl0y" byline="true" />
+				</then>
+			</elseif>
+			<elseif>
+				<equals arg1="${dmgrTarget.730}" arg2="C" />
+				<then>
+					<echo>Set Target To Produzione Cella 01</echo>
+					<replaceregexp file="${resources.properties}" match="destinationHost=(.*)" replace="destinationHost=26.0.129.71" byline="true" />
+					<replaceregexp file="${resources.properties}" match="destinationSoapPort=(.*)" replace="destinationSoapPort=8879" byline="true" />
+					<replaceregexp file="${resources.properties}" match="destinationAdminID=(.*)" replace="destinationAdminID=wasdeploy" byline="true" />
+					<replaceregexp file="${resources.properties}" match="destinationAdminPasswd=(.*)" replace="destinationAdminPasswd=wasdepl0y" byline="true" />
+				</then>
+			</elseif>
+			<elseif>
+				<equals arg1="${dmgrTarget.730}" arg2="D" />
+				<then>
+					<echo>Set Target To Produzione Cella 02</echo>
+					<replaceregexp file="${resources.properties}" match="destinationHost=(.*)" replace="destinationHost=26.0.129.82" byline="true" />
+					<replaceregexp file="${resources.properties}" match="destinationSoapPort=(.*)" replace="destinationSoapPort=8879" byline="true" />
+					<replaceregexp file="${resources.properties}" match="destinationAdminID=(.*)" replace="destinationAdminID=wasdeploy" byline="true" />
+					<replaceregexp file="${resources.properties}" match="destinationAdminPasswd=(.*)" replace="destinationAdminPasswd=wasdepl0y" byline="true" />
+				</then>
+			</elseif>
+			<elseif>
+				<equals arg1="${dmgrTarget.730}" arg2="E" />
+				<then>
+					<echo>Set Target To Produzione Cella 03</echo>
+					<replaceregexp file="${resources.properties}" match="destinationHost=(.*)" replace="destinationHost=26.0.129.93" byline="true" />
+					<replaceregexp file="${resources.properties}" match="destinationSoapPort=(.*)" replace="destinationSoapPort=8879" byline="true" />
+					<replaceregexp file="${resources.properties}" match="destinationAdminID=(.*)" replace="destinationAdminID=wasdeploy" byline="true" />
+					<replaceregexp file="${resources.properties}" match="destinationAdminPasswd=(.*)" replace="destinationAdminPasswd=wasdepl0y" byline="true" />
+				</then>
+			</elseif>
+			<else>
+				<echo> No Correct choose done </echo>
+			</else>
+		</if>
+		<echo message="Resource.properties Modified" />
+	</target>
+	<target name="ClearDmgrSorce" depends="logging">
+		<echo message="Set Dmgr Source Parameter to blank">
+		</echo>
+		<replaceregexp file="${resources.properties}" match="remoteHost=(.*)" replace="remoteHost=" byline="true" />
+		<replaceregexp file="${resources.properties}" match="remoteSoapPort=(.*)" replace="remoteSoapPort=" byline="true" />
+		<replaceregexp file="${resources.properties}" match="remoteAdminID=(.*)" replace="remoteAdminID=" byline="true" />
+		<replaceregexp file="${resources.properties}" match="remoteAdminPasswd=(.*)" replace="remoteAdminPasswd=" byline="true" />
+	</target>
+	<target name="-readBackupArchiveName" depends="logging">
+		<input message="Name of the backup archive without extension:  " addproperty="name.backupArchive" />
+	</target>
+
+	<target name="-inputChooseSSLConfiguration" description="Choose SSL Configuration" depends="logging">
+		<input message="Type The NAme of SSL Configuration you want to change:" addproperty="input.SSLConfiguration" />
+	</target>
+	<target name="-inputTypeOfChipersSuite" description="Choose Chipers Suite" depends="logging">
+		<echo>
+Witch Type Of Chipers Level Do you want to apply?
+   -----------------------------------------------
+   HIGH
+   ECDHE
+   MIXED
+   HIGH_ECDHE
+   -----------------------------------------------                  
+      </echo>
+		<input message=" " validargs="HIGH,ECDHE,MIXED,HIGH_ECDHE" addproperty="input.ChipersLevel" />
+	</target>
+	<target name="changeChipersLevel" description="change level of Chipers" depends="logging,-inputChooseSSLConfiguration,-inputTypeOfChipersSuite">
+		<echo message="--- Apply Chiper Level ${input.ChipersLevel} to ${input.SSLConfiguration} ------" />
+		<echo message=" Connecting to host: ${remoteHost} Port: ${remoteSoapPort} " />
+		<wsadmin script="../scripts/standalone/FixChipers.py" lang="jython" properties="${resources.properties}" host="${destinationHost}" port="${destinationSoapPort}" user="${destinationAdminID}" password="${destinationAdminPasswd}" conntype="soap" failonerror="false">
+			<arg value="${input.ChipersLevel}" />
+			<arg value="${input.SSLConfiguration}" />
+		</wsadmin>
+	</target>
+	<target name="inputSetupHTTPOnlyCookiesProps" description="Get user input">
+		<input message="Do you want setup HTTPOnly property on all servers ? [yes , no] [default NO]" addproperty="input.setupHTTPOnlyCookiesProps" />
+	</target>
+	<target name="inputDisableClientAutXDSSLSettings" description="Get user input">
+		<input message="Do you want to disable client authentication XDDefaultSSLSettings ? [yes , no] [default NO]" addproperty="input.disableClientAutXDSSLSettings" />
+	</target>
+	<target name="inputApplyJDKLevel" description="Get user input">
+		<input message="Do you want to set JDK Level for WebSPhere 8.5.5.x and more? [yes , no] [default NO]" addproperty="input.applyJDKLevel" />
+	</target>
+	<target name="inputDisableEmbeddedChoice" description="Get user input">
+		<input message="Do you want to disable embedded configuration ? [yes , no] [default NO]" addproperty="input.DisableEmbeddedChoice" />
+	</target>
+
+	<target name="inputNameCluster" description="Get user input">
+		<input message="Insert NameCLuster " addproperty="input.NameCluster" />
+	</target>
+	<target name="inputNameProperty" description="Get user input">
+		<input message="Input Name Property" addproperty="input.NameProperty" />
+	</target>
+	<target name="inputValueProperty" description="Get user input">
+		<input message="Input Value Propery" addproperty="input.ValueProperty" />
+	</target>
+
+	<target name="inputDisableIPV6" description="Get user input" depends="logging">
+		<input message="Do you want to disable IPV6 configuration ? [yes , no] [default NO]" addproperty="input.DisableIPV6" />
+	</target>
+
+	<target name="inputapplyEnableSecurityServiceCheck" description="Get user input" depends="logging">
+		<input message="Do you want to applyEnableSecurityServiceCheck on NodeAgent? [yes , no] [default NO]" addproperty="input.applyEnableSecurityServiceCheck" />
+	</target>
+
+	<target name="inputapplyScriptingPatch" description="Get user input" depends="logging">
+		<input message="Do you want to applyScriptingsPatch on Dmgr? [yes , no] [default NO]" addproperty="input.inputapplyScriptingPatch" />
+	</target>
+	<target name="inputApplytrustedSensitiveHeaderOrigin" description="Get user input" depends="logging">
+	      <input message="Do you want to apply trustedSensitiveHeaderOrigin to each application server? [yes , no] [default NO]" addproperty="input.trustedSensitiveHeaderOrigin" />
+	</target>
+	<target name="inputSetExecutionOwnerWasup" description="Get user input" depends="logging">
+	      <input message="Do you want to set wasup as execution owner for all servers? [yes , no] [default NO]" addproperty="input.setexecutionownerwasup" />
+	   </target>
+	
+	
+
+	<target name="inputWSAdminData" description="Get user input" depends="logging">
+		<input message="Insert the Scope of the resources. The scope can be a cluster, a node, a server or insert ALL for all the resources (if the scope is a server it must be used the form Node:Server)" addproperty="remoteScope" />
+	</target>
+	<target name="inputWSAdminDataForTrace" description="Get user input" depends="logging">
+		<input message="Insert the Scope of the resources. The scope can be a cluster OR server (if the scope is a server it must be used the form Node:Server)" addproperty="remoteTraceScope" />
+	</target>
+	<target name="confirmDeletionOutputFolder" description="Get user input" depends="logging">
+		<input message="Do you want to delete previous files from output folder before performing the operation?" validargs="Y,N" addproperty="deletion.choice" />
+	</target>
+	<target name="confirmDeletionInputFolder" description="Get user input" depends="logging">
+		<input message="Do you want to delete previous files from input folder before performing the operation?" validargs="Y,N" addproperty="deletion.choice" />
+	</target>
+	<target name="confirmCopy" description="Get user input" depends="logging">
+		<input message="Do you want to copy the resource from the output folder to the input one after reading the selected resources?" validargs="Y,N" addproperty="copy.choice" />
+	</target>
+
+	<!--
+   The readActivationSpecs target reads all the Activation Specifications
+  from the remote server and save them into the ${ActSpecsOutDir} directory. 
+   -->
+	<target name="-listJDKAvaiable" depends="logging">
+		<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+			<arg line=" -host ${remoteHost} -port ${remoteSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info -username ${remoteAdminID} -password ${remoteAdminPasswd} -f ../scripts/standalone/BasicTuning.py readJDKVersion" />
+		</exec>
+		<input message="Which JDK do you want to apply? " addproperty="input.JDK" />
+	</target>
+	<target name="applyJDKLevel" depends="logging,-listJDKAvaiable">
+		<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+			<arg line=" -host ${remoteHost} -port ${remoteSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info -username ${remoteAdminID} -password ${remoteAdminPasswd} -f ../scripts/standalone/BasicTuning.py applyJdkVersion ${input.JDK}" />
+		</exec>
+		<echo>Result: ${result}</echo>
+	</target>
+	<target name="basicTuning" depends="logging, inputDisableClientAutXDSSLSettings,inputDisableEmbeddedChoice,inputDisableIPV6,inputapplyEnableSecurityServiceCheck,inputapplyScriptingPatch,inputApplyJDKLevel,inputSetupHTTPOnlyCookiesProps,inputApplytrustedSensitiveHeaderOrigin">
+		<echo message="--- Apply Basic Tuning on Enviroment ---" />
+		<if>
+			<and>
+				<isset property="input.applyJDKLevel" />
+				<equals arg1="${input.applyJDKLevel}" arg2="yes" />
+			</and>
+			<then>
+				<antcall target="applyJDKLevel" />
+			</then>
+		</if>
+		<if>
+			<and>
+				<isset property="input.disableClientAutXDSSLSettings" />
+				<equals arg1="${input.disableClientAutXDSSLSettings}" arg2="yes" />
+			</and>
+			<then>
+				<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+					<arg line=" -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info -username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/standalone/setupClientAuthSSLSettings.py" />
+				</exec>
+				<echo>Result: ${result}</echo>
+			</then>
+		</if>
+
+		<if>
+			<and>
+				<isset property="input.setupHTTPOnlyCookiesProps" />
+				<equals arg1="${input.setupHTTPOnlyCookiesProps}" arg2="yes" />
+			</and>
+			<then>
+				<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+					<arg line=" -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info -username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/standalone/BasicTuning.py setupHTTPOnlyCookiesProps" />
+				</exec>
+				<echo>Result: ${result}</echo>
+			</then>
+		</if>
+		<if>
+			<and>
+				<isset property="input.DisableEmbeddedChoice" />
+				<equals arg1="${input.DisableEmbeddedChoice}" arg2="yes" />
+			</and>
+			<then>
+				<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+					<arg line=" -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info -username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/standalone/BasicTuning.py DisableEmbedded" />
+				</exec>
+				<echo>Result: ${result}</echo>
+			</then>
+		</if>
+		<if>
+			<and>
+				<isset property="input.DisableIPV6" />
+				<equals arg1="${input.DisableIPV6}" arg2="yes" />
+			</and>
+			<then>
+				<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+					<arg line=" -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info -username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/standalone/BasicTuning.py DisableIPV6" />
+				</exec>
+				<echo>Result: ${result}</echo>
+			</then>
+		</if>
+		<if>
+			<and>
+				<isset property="input.applyEnableSecurityServiceCheck" />
+				<equals arg1="${input.applyEnableSecurityServiceCheck}" arg2="yes" />
+			</and>
+			<then>
+				<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+					<arg line=" -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info -username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/standalone/BasicTuning.py ApplyEnableSecurityServiceCheck" />
+				</exec>
+				<echo>Result: ${result}</echo>
+			</then>
+		</if>
+		<if>
+			<and>
+				<isset property="input.setexecutionownerwasup" />
+				<equals arg1="${input.setexecutionownerwasup}" arg2="yes" />
+			</and>
+			<then>
+				<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+					<arg line=" -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info -username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/standalone/BasicTuning.py setExecutionOwnerWasup" />
+				</exec>
+				<echo>Result: ${result}</echo>
+			</then>
+		</if>
+
+
+
+		<if>
+		   <and>
+		      <isset property="input.trustedSensitiveHeaderOrigin" />
+		      <equals arg1="${input.trustedSensitiveHeaderOrigin}" arg2="yes" />
+		   </and>
+		   <then>
+		      <exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+		         <arg line=" -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info -username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/standalone/AddTrustedSensitiveHeaderOriginCP.py " />
+		      </exec>
+		      <echo>Result: ${result}</echo>
+		   </then>
+		</if>
+		<if>
+			<and>
+				<isset property="input.inputapplyScriptingPatch" />
+				<equals arg1="${input.inputapplyScriptingPatch}" arg2="yes" />
+			</and>
+			<then>
+				<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+					<arg line=" -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info -username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/standalone/BasicTuning.py applyScriptingPatch" />
+				</exec>
+				<echo>Result: ${result}</echo>
+			</then>
+		</if>
+		<echo>Remember to restart Deploy Manager to allow Property to take effect</echo>
+	</target>
+	<target name="setupXDDefaultSSLSettings" depends="logging">
+		<echo>Disabling Client Authentication for XDDefaultSSLSettings (only  for ODRLib)</echo>
+		<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+			<arg line=" -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info -username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/standalone/setupXDDefaultSSLSettings.py " />
+		</exec>
+		<echo>Result: ${result}</echo>
+	</target>
+
+
+	<target name="-WARNING" depends="logging">
+		<echo>########################## WARNING ##########################</echo>
+		<echo> 
+         IF YOU CREATE A NAMESPACE WITH SLASH "\" CHARACTER INTO THE NAMESPACE NAME THE SCRIPT COULD NOT WORK 
+         UNTIL YOU MAKE THE TARGET "applyScriptingPatch"
+      </echo>
+		<echo>########################## WARNING ##########################</echo>
+	</target>
+	<target name="applyScriptingPatch" depends="logging">
+		<echo message="--- Need To Apply Scripts Patch  ---" />
+		<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+			<arg line=" -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info -username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/standalone/BasicTuning.py applyScriptingPatch" />
+		</exec>
+		<echo>Result: ${result}</echo>
+		<if>
+			<and>
+				<isset property="input.inputapplyScriptingPatch" />
+				<equals arg1="${input.inputapplyScriptingPatch}" arg2="yes" />
+			</and>
+			<then>
+				<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+					<arg line=" -host ${destinationHost} -port ${destinationSoapPort} -conntype soap ${wsadmin.java.options} -username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/standalone/BasicTuning.py applyScriptingPatch" />
+				</exec>
+				<echo>Result: ${result}</echo>
+			</then>
+		</if>
+		<input message="Do you want to Restart Dmgr? [yes,no]  (Only if you are on Local System)  " addproperty="input.restart" />
+		<if>
+			<and>
+				<isset property="input.restart" />
+				<equals arg1="${input.restart}" arg2="yes" />
+			</and>
+			<then>
+				<exec executable="${DeploymentManagerBin}/stopManager.sh" resultproperty="result" failonerror="false">
+					<arg line=" -username ${destinationAdminID} -password ${destinationAdminPasswd} " />
+				</exec>
+				<echo>Result: ${result}</echo>
+				<exec executable="${DeploymentManagerBin}/startManager.sh" resultproperty="result" failonerror="false" />
+			</then>
+		</if>
+	</target>
+
+	<!--NEW-->
+	<target name="readDynamicClusters" depends="logging, confirmDeletionOutputFolder ,confirmCopy" description="Read the defined DynamicCluster">
+		<if>
+			<and>
+				<isset property="deletion.choice" />
+				<equals arg1="${deletion.choice}" arg2="Y" />
+			</and>
+			<then>
+				<antcall target="clearOutput-DYCL" />
+			</then>
+		</if>
+		<echo message="--- Reading the defined Dynamic Cluster  and save them into the ${DynamicClusterOutDir}. ---" />
+		<echo message=" Connecting to host: ${remoteHost} Port: ${remoteSoapPort} " />
+		<wsadmin script="../scripts/resources/ReadDynamicClusters.py" lang="jython" properties="${resources.properties}" host="${remoteHost}" port="${remoteSoapPort}" user="${remoteAdminID}" password="${remoteAdminPasswd}" conntype="soap" failonerror="false">
+			<arg value="${DynamicClusterOutDir}" />
+		</wsadmin>
+		<if>
+			<and>
+				<isset property="copy.choice" />
+				<equals arg1="${copy.choice}" arg2="Y" />
+			</and>
+			<then>
+				<if>
+					<and>
+						<isset property="deletion.choice" />
+						<equals arg1="${deletion.choice}" arg2="Y" />
+					</and>
+					<then>
+						<antcall target="clearInput-DYCL" />
+					</then>
+				</if>
+				<antcall target="copyResources-DYCL" />
+			</then>
+		</if>
+	</target>
+	<!-- GESTIONE CUSTOMIZZAZIONE FILES-->
+	<target name="customizeFiles" depends="logging,-selectScopeName">
+		<echo message="--- Customization Properies file ---" />
+	</target>
+	<target name="-selectScopeName" description="Get user input" depends="logging">
+		<echo>
+     Which scope do you want to change? 
+       1.   Cell
+       2.   Cluster
+       3.   Node
+        4.   Server
+      </echo>
+		<input message=" " validargs="1,2,3,4," addproperty="scopeName.choice" />
+		<condition property="scopeName_choice" value="Cell">
+			<equals arg1="${scopeName.choice}" arg2="1" />
+		</condition>
+		<condition property="scopeName_choice" value="Cluster">
+			<equals arg1="${scopeName.choice}" arg2="2" />
+		</condition>
+		<condition property="scopeName_choice" value="Node">
+			<equals arg1="${scopeName.choice}" arg2="3" />
+		</condition>
+		<condition property="scopeName_choice" value="Server">
+			<equals arg1="${scopeName.choice}" arg2="4" />
+		</condition>
+		<echo>Choice made : ${scopeName.choice}</echo>
+		<antcall target="-choseReplaceString">
+			<param name="scopeName_choice" value="${scopeName_choice}" />
+		</antcall>
+	</target>
+	<target name="-choseReplaceString" depends="logging">
+		<if>
+			<equals arg1="${scopeName_choice}" arg2="Server" />
+			<then>
+				<echo>step Server</echo>
+				<input message=" Insert Original Node Name: " addproperty="orig.node.name" />
+				<input message=" Insert Original Server Name: " addproperty="orig.server.name" />
+				<property name="input.sourceString" value="${orig.node.name}:${orig.server.name}" />
+				<property name="input.sourceNameFileString" value="${orig.node.name}_${orig.server.name}" />
+				<input message=" Insert New Node Name: " addproperty="new.node.name" />
+				<input message=" Insert New Server Name: " addproperty="new.server.name" />
+				<property name="input.destinationString" value="${new.node.name}:${new.server.name}" />
+				<property name="input.destinationNameFileString" value="${new.node.name}_${new.server.name}" />
+			</then>
+			<else>
+				<echo>step Other</echo>
+				<input message="Insert Original ${scopeName_choice} Name: " addproperty="input.sourceString" />
+				<input message="Insert New ${scopeName_choice} Name:" addproperty="input.destinationString" />
+				<property name="input.sourceNameFileString" value="${input.sourceString}" />
+				<property name="input.destinationNameFileString" value="${input.destinationString}" />
+			</else>
+		</if>
+		<antcall target="-renameInFiles">
+			<param name="input.sourceString" value="${input.sourceString}" />
+			<param name="input.destinationString" value="${input.destinationString}" />
+			<param name="input.sourceNameFileString" value="${input.sourceNameFileString}" />
+			<param name="input.destinationNameFileString" value="${input.destinationNameFileString}" />
+		</antcall>
+	</target>
+	<target name="-renameInFiles" depends="logging">
+		<foreach target="-renameFileName" param="theDir" inheritall="true">
+			<path>
+				<dirset id="dirset" dir="${ResourcesDir}">
+					<include name="*" />
+				</dirset>
+			</path>
+			<param name="input.sourceNameFileString" value="${input.sourceNameFileString}" />
+			<param name="input.destinationNameFileString" value="${input.destinationNameFileString}" />
+		</foreach>
+		<foreach target="-renameInFile" param="theFile" inheritall="true">
+			<path>
+				<fileset dir="${ResourcesDir}">
+					<include name="**/*.${originalExt}" />
+				</fileset>
+			</path>
+			<param name="input.sourceString" value="${input.sourceString}" />
+			<param name="input.destinationString" value="${input.destinationString}" />
+		</foreach>
+	</target>
+	<target name="-renameInFile">
+		<echo>File examined is  ${theFile}</echo>
+		<replace file="${theFile}" token="scopeName='${input.sourceString}'" value="scopeName='${input.destinationString}'" />
+	</target>
+	<target name="-renameFileName" depends="logging">
+		<echo>Examine Dir ${theDir}</echo>
+		<echo> sourceString     >>> ${input.sourceNameFileString}</echo>
+		<echo> destinationString   >>> ${input.destinationNameFileString}</echo>
+		<move todir="${theDir}" includeemptydirs="false">
+			<fileset dir="${theDir}">
+				<include name="**/*" />
+			</fileset>
+			<mapper type="regexp" from="([^\.]*)\.(${input.sourceNameFileString})\.([^\.]*)\.py" to="\1.${input.destinationNameFileString}.\3.py" />
+		</move>
+	</target>
+	<target name="-HiddenRenameInFile" depends="logging">
+		<echo>File examined is  ${theFile}</echo>
+		<replace file="${theFile}" token="${input.sourceString}" value="${input.destinationString}" />
+	</target>
+	<target name="logging,-renameInFile">
+		<echo>File examined is  ${theFile}</echo>
+		<replace file="${theFile}" token="scopeName='${input.sourceString}'" value="scopeName='${input.destinationString}'" />
+	</target>
+	<!-- READPORTS-->
+	<target name="readASPorts" depends="logging,inputWSAdminData,confirmDeletionOutputFolder,confirmCopy" description="Read Ports for AS">
+		<if>
+			<and>
+				<isset property="deletion.choice" />
+				<equals arg1="${deletion.choice}" arg2="Y" />
+			</and>
+			<then>
+				<antcall target="clearOutput-P" />
+			</then>
+		</if>
+		<echo message="--- Reading the defined Ports List and save them into the ${ASPortsOutDir}. ---" />
+		<echo message=" Connecting to host: ${remoteHost} Port: ${remoteSoapPort} " />
+		<wsadmin script="../scripts/resources/ReadPorts.py" lang="jython" properties="${resources.properties}" host="${remoteHost}" port="${remoteSoapPort}" user="${remoteAdminID}" password="${remoteAdminPasswd}" conntype="soap" failonerror="false">
+			<arg value="${ASPortsOutDir}" />
+			<arg value="${remoteScope}" />
+		</wsadmin>
+		<if>
+			<and>
+				<isset property="copy.choice" />
+				<equals arg1="${copy.choice}" arg2="Y" />
+			</and>
+			<then>
+				<if>
+					<and>
+						<isset property="deletion.choice" />
+						<equals arg1="${deletion.choice}" arg2="Y" />
+					</and>
+					<then>
+						<antcall target="clearInput-Ports" />
+					</then>
+				</if>
+				<antcall target="copyResources-Ports" />
+			</then>
+		</if>
+	</target>
+
+	<!-- END READ PORTS-->
+	<!--FINE GESTIONE CUSTOMIZZAZIONE FILES-->
+	<target name="readSharedLibs" depends="logging,inputWSAdminData,confirmDeletionOutputFolder,confirmCopy" description="Read the defined SharedLib">
+		<if>
+			<and>
+				<isset property="deletion.choice" />
+				<equals arg1="${deletion.choice}" arg2="Y" />
+			</and>
+			<then>
+				<antcall target="clearOutput-SharedLib" />
+			</then>
+		</if>
+		<echo message="--- Reading the defined Shared Lib and save them into the ${SharedLibOutDir}. ---" />
+		<echo message=" Connecting to host: ${remoteHost} Port: ${remoteSoapPort} " />
+		<wsadmin script="../scripts/resources/ReadSharedLibrary.py" lang="jython" properties="${resources.properties}" host="${remoteHost}" port="${remoteSoapPort}" user="${remoteAdminID}" password="${remoteAdminPasswd}" conntype="soap" failonerror="false">
+			<arg value="${SharedLibOutDir}" />
+			<arg value="${remoteScope}" />
+		</wsadmin>
+		<if>
+			<and>
+				<isset property="copy.choice" />
+				<equals arg1="${copy.choice}" arg2="Y" />
+			</and>
+			<then>
+				<if>
+					<and>
+						<isset property="deletion.choice" />
+						<equals arg1="${deletion.choice}" arg2="Y" />
+					</and>
+					<then>
+						<antcall target="clearInput-AS" />
+					</then>
+				</if>
+				<antcall target="copyResources-SharedLib" />
+			</then>
+		</if>
+	</target>
+	<target name="readActivationSpecs" depends="logging, inputWSAdminData, confirmDeletionOutputFolder, confirmCopy" description="Read the defined Activation Specifications">
+		<if>
+			<and>
+				<isset property="deletion.choice" />
+				<equals arg1="${deletion.choice}" arg2="Y" />
+			</and>
+			<then>
+				<antcall target="clearOutput-AS" />
+			</then>
+		</if>
+		<echo message="--- Reading the defined Activation Specifications and save them into the ${ActSpecsOutDir}. ---" />
+		<echo message=" Connecting to host: ${remoteHost} Port: ${remoteSoapPort} " />
+		<wsadmin script="../scripts/resources/ReadActivationSpecs.py" lang="jython" properties="${resources.properties}" host="${remoteHost}" port="${remoteSoapPort}" user="${remoteAdminID}" password="${remoteAdminPasswd}" conntype="soap" failonerror="false">
+			<arg value="${ActSpecsOutDir}" />
+			<arg value="${remoteScope}" />
+		</wsadmin>
+		<if>
+			<and>
+				<isset property="copy.choice" />
+				<equals arg1="${copy.choice}" arg2="Y" />
+			</and>
+			<then>
+				<if>
+					<and>
+						<isset property="deletion.choice" />
+						<equals arg1="${deletion.choice}" arg2="Y" />
+					</and>
+					<then>
+						<antcall target="clearInput-AS" />
+					</then>
+				</if>
+				<antcall target="copyResources-AS" />
+			</then>
+		</if>
+	</target>
+	<!-- Read WebSphere Variables -->
+	<target name="readWebSphereVariables" depends="logging, inputWSAdminData, confirmDeletionOutputFolder, confirmCopy" description="Read the defined Activation Specifications">
+		<if>
+			<and>
+				<isset property="deletion.choice" />
+				<equals arg1="${deletion.choice}" arg2="Y" />
+			</and>
+			<then>
+				<antcall target="clearOutput-AS" />
+			</then>
+		</if>
+		<echo message="--- Reading the defined WebSphere Variables and save them into the ${WVarOutDir}. ---" />
+		<echo message=" Connecting to host: ${remoteHost} Port: ${remoteSoapPort} " />
+		<wsadmin script="../scripts/resources/ReadWebSphereVariables.py" lang="jython" properties="${resources.properties}" host="${remoteHost}" port="${remoteSoapPort}" user="${remoteAdminID}" password="${remoteAdminPasswd}" conntype="soap" failonerror="false">
+			<arg value="${WVarOutDir}" />
+			<arg value="${remoteScope}" />
+		</wsadmin>
+		<if>
+			<and>
+				<isset property="copy.choice" />
+				<equals arg1="${copy.choice}" arg2="Y" />
+			</and>
+			<then>
+				<if>
+					<and>
+						<isset property="deletion.choice" />
+						<equals arg1="${deletion.choice}" arg2="Y" />
+					</and>
+					<then>
+						<antcall target="clearInput-WVar" />
+					</then>
+				</if>
+				<antcall target="copyResources-WVar" />
+			</then>
+		</if>
+	</target>
+	<!-- END READ WebSphere Variables-->
+	<!-- Topics Task -->
+	<target name="readTopics" depends="logging, inputWSAdminData, confirmDeletionOutputFolder, confirmCopy" description="Read the defined Topics">
+		<if>
+			<and>
+				<isset property="deletion.choice" />
+				<equals arg1="${deletion.choice}" arg2="Y" />
+			</and>
+			<then>
+				<antcall target="clearOutput-AS" />
+			</then>
+		</if>
+		<echo message="--- Reading the defined Topics and save them into the ${TopicOutDir}. ---" />
+		<echo message=" Connecting to host: ${remoteHost} Port: ${remoteSoapPort} " />
+		<wsadmin script="../scripts/resources/ReadTopics.py" lang="jython" properties="${resources.properties}" host="${remoteHost}" port="${remoteSoapPort}" user="${remoteAdminID}" password="${remoteAdminPasswd}" conntype="soap" failonerror="false">
+			<arg value="${TopicOutDir}" />
+			<arg value="${remoteScope}" />
+		</wsadmin>
+		<if>
+			<and>
+				<isset property="copy.choice" />
+				<equals arg1="${copy.choice}" arg2="Y" />
+			</and>
+			<then>
+				<if>
+					<and>
+						<isset property="deletion.choice" />
+						<equals arg1="${deletion.choice}" arg2="Y" />
+					</and>
+					<then>
+						<antcall target="clearInput-Topic" />
+					</then>
+				</if>
+				<antcall target="copyResources-Topic" />
+			</then>
+		</if>
+	</target>
+	<!-- END TOPIC TASKS -->
+	<target name="readConnFactories" depends="logging,inputWSAdminData,confirmDeletionOutputFolder,confirmCopy" description="Read the defined Connection Factories">
+		<if>
+			<and>
+				<isset property="deletion.choice" />
+				<equals arg1="${deletion.choice}" arg2="Y" />
+			</and>
+			<then>
+				<antcall target="clearOutput-CF" />
+			</then>
+		</if>
+		<echo message="--- Reading the defined Connection Factories and save them into the ${ConnFactoriesOutDir}. ---" />
+		<echo message="--- Connecting to host: ${remoteHost} Port: ${remoteSoapPort}. ---" />
+		<wsadmin script="../scripts/resources/ReadConnectionFactory.py" lang="jython" properties="${resources.properties}" host="${remoteHost}" port="${remoteSoapPort}" user="${remoteAdminID}" password="${remoteAdminPasswd}" conntype="soap" failonerror="false">
+			<arg value="${ConnFactoriesOutDir}" />
+			<arg value="${remoteScope}" />
+		</wsadmin>
+		<if>
+			<and>
+				<isset property="copy.choice" />
+				<equals arg1="${copy.choice}" arg2="Y" />
+			</and>
+			<then>
+				<if>
+					<and>
+						<isset property="deletion.choice" />
+						<equals arg1="${deletion.choice}" arg2="Y" />
+					</and>
+					<then>
+						<antcall target="clearInput-CF" />
+					</then>
+				</if>
+				<antcall target="copyResources-CF" />
+			</then>
+		</if>
+	</target>
+
+	<!--addActivSpecCustomProps GA-->
+	<target name="inputNameCPActSpec" description="Get user input" depends="logging">
+		<input message="Insert the name of Custom Property " addproperty="NameCPAS" />
+	</target>
+	<target name="inputTypeCPActSpec" description="Get user input" depends="logging">
+		<input message="Insert the type of Custom Property [Examples: 'java.lang.String or 'java.lang.Integer' or 'java.lang.Boolean']" addproperty="TypeCPAS" />
+	</target>
+	<target name="inputValueCPActSpec" description="Get user input" depends="logging">
+		<input message="Insert the value of Custom Property " addproperty="ValueCPAS" />
+	</target>
+	<target name="inputTargetScope" description="Get user input" depends="logging">
+		<input message="Insert the Scope of the resources. The scope can be a cluster, a node, a server (if the scope is a server it must be used the form Node:Server)" addproperty="targetScope" />
+	</target>
+	<target name="inputASName" description="Get user input" depends="logging">
+		<input message="Insert the AS Name (to change all the AS for selected Scope digit ALL)" addproperty="ActivationSpecificationName" />
+	</target>
+	<target name="addActivSpecCustomProps" depends="logging,inputTargetScope,inputASName,inputNameCPActSpec,inputTypeCPActSpec,inputValueCPActSpec" description="">
+		<echo message="--- Connecting to host: ${destinationHost} Port: ${destinationSoapPort}. ---" />
+		<wsadmin script="../scripts/resources/AddCustomPropertiesAS.py" lang="jython" properties="${resources.properties}" host="${destinationHost}" port="${destinationSoapPort}" user="${destinationAdminID}" password="${destinationAdminPasswd}" conntype="soap" failonerror="false">
+			<arg value="${targetScope}" />
+			<arg value="${ActivationSpecificationName}" />
+			<arg value="${NameCPAS}" />
+			<arg value="${TypeCPAS}" />
+			<arg value="${ValueCPAS}" />
+		</wsadmin>
+	</target>
+	<!--addActivSpecCustomProps GA-->
+	<!-- applyWCProperies-->
+	<target name="inputWCCustomPropertyName" description="Get user input" depends="logging">
+		<input message="Insert the name of WebContainer Property " addproperty="wcPropertyName" />
+	</target>
+	<target name="inputWCCustomPropertyValue" description="Get user input" depends="logging">
+		<input message="Insert the name of WebContainer Property " addproperty="wcPropertyValue" />
+	</target>
+	<target name="applyWCProperties" depends="logging, inputWSAdminData,inputWCCustomPropertyName,inputWCCustomPropertyValue" description="">
+		<echo message="--- Connecting to host: ${destinationHost} Port: ${destinationSoapPort}. ---" />
+		<wsadmin script="../scripts/standalone/AddWCProperties.py" lang="jython" properties="${resources.properties}" host="${destinationHost}" port="${destinationSoapPort}" user="${destinationAdminID}" password="${destinationAdminPasswd}" conntype="soap" failonerror="false">
+			<arg value="${remoteScope}" />
+			<arg value="${wcPropertyName}" />
+			<arg value="${wcPropertyValue}" />
+		</wsadmin>
+
+	</target>
+
+
+	<!--The readDataSources target reads all the Data Sources   from the remote server and save them into the ${DataSourcesOutDir} directory. -->
+	<target name="readDataSources" depends="logging,inputWSAdminData,confirmDeletionOutputFolder,confirmCopy" description="Read the defined Data Sources">
+		<if>
+			<and>
+				<isset property="deletion.choice" />
+				<equals arg1="${deletion.choice}" arg2="Y" />
+			</and>
+			<then>
+				<antcall target="clearOutput-DS" />
+			</then>
+		</if>
+		<echo message="--- Reading the defined Data Sources and save them into the ${DataSourcesOutDir}. ---" />
+		<echo message="--- Connecting to host: ${remoteHost} Port: ${remoteSoapPort} . ---" />
+		<wsadmin script="../scripts/resources/ReadDataSources.py" lang="jython" properties="${resources.properties}" host="${remoteHost}" port="${remoteSoapPort}" user="${remoteAdminID}" password="${remoteAdminPasswd}" conntype="soap" failonerror="false">
+			<arg value="${DataSourcesOutDir}" />
+			<arg value="${remoteScope}" />
+		</wsadmin>
+		<if>
+			<and>
+				<isset property="copy.choice" />
+				<equals arg1="${copy.choice}" arg2="Y" />
+			</and>
+			<then>
+				<if>
+					<and>
+						<isset property="deletion.choice" />
+						<equals arg1="${deletion.choice}" arg2="Y" />
+					</and>
+					<then>
+						<antcall target="clearInput-DS" />
+					</then>
+				</if>
+				<antcall target="copyResources-DS" />
+			</then>
+		</if>
+	</target>
+
+	<!--
+   The readJDBCProviders target reads all the JDBC Providers
+  from the remote server and save them into the ${JDBCProvidersOutDir} directory. 
+   -->
+	<target name="readJDBCProviders" depends="logging,inputWSAdminData,confirmDeletionOutputFolder,confirmCopy" description="Read the defined JDBC Providers">
+		<if>
+			<and>
+				<isset property="deletion.choice" />
+				<equals arg1="${deletion.choice}" arg2="Y" />
+			</and>
+			<then>
+				<antcall target="clearOutput-JDBCProvider" />
+			</then>
+		</if>
+		<echo message="--- Reading the defined JDBC Providers and save them into the ${JDBCProvidersOutDir}. ---" />
+		<!--<echo message=" Connecting to host: ${remoteHost} Port: ${remoteSoapPort} . "/>-->
+		<wsadmin script="../scripts/resources/ReadJDBCProvider.py" lang="jython" properties="${resources.properties}" host="${remoteHost}" port="${remoteSoapPort}" user="${remoteAdminID}" password="${remoteAdminPasswd}" conntype="soap" failonerror="false">
+			<arg value="${JDBCProvidersOutDir}" />
+			<arg value="${remoteScope}" />
+		</wsadmin>
+		<if>
+			<and>
+				<isset property="copy.choice" />
+				<equals arg1="${copy.choice}" arg2="Y" />
+			</and>
+			<then>
+				<if>
+					<and>
+						<isset property="deletion.choice" />
+						<equals arg1="${deletion.choice}" arg2="Y" />
+					</and>
+					<then>
+						<antcall target="clearInput-JDBCProvider" />
+					</then>
+				</if>
+				<antcall target="copyResources-JDBCProvider" />
+			</then>
+		</if>
+	</target>
+	<target name="readNameSpaceBindings" depends="logging,inputWSAdminData,confirmDeletionOutputFolder,confirmCopy" description="Read the defined Name Space Bindings">
+		<if>
+			<and>
+				<isset property="deletion.choice" />
+				<equals arg1="${deletion.choice}" arg2="Y" />
+			</and>
+			<then>
+				<antcall target="clearOutput-NameSpaceBindings" />
+			</then>
+		</if>
+		<echo message="--- Reading the defined Name Space Bindings and save them into the ${NameSpaceBindOutDir}. ---" />
+		<!--<echo message=" Connecting to host: ${remoteHost} Port: ${remoteSoapPort} . "/>-->
+		<wsadmin script="../scripts/resources/ReadNameSpaceBinding.py" lang="jython" properties="${resources.properties}" host="${remoteHost}" port="${remoteSoapPort}" user="${remoteAdminID}" password="${remoteAdminPasswd}" conntype="soap" failonerror="false">
+			<arg value="${NameSpaceBindOutDir}" />
+			<arg value="${remoteScope}" />
+		</wsadmin>
+		<if>
+			<and>
+				<isset property="copy.choice" />
+				<equals arg1="${copy.choice}" arg2="Y" />
+			</and>
+			<then>
+				<if>
+					<and>
+						<isset property="deletion.choice" />
+						<equals arg1="${deletion.choice}" arg2="Y" />
+					</and>
+					<then>
+						<antcall target="clearInput-NameSpaceBindings" />
+					</then>
+				</if>
+				<antcall target="copyResources-NameSpaceBindings" />
+			</then>
+		</if>
+	</target>
+
+	<!--
+   The readQueues target reads all the Queues
+  from the remote server and save them into the ${QueuesOutDir} directory. 
+   -->
+	<target name="readQueues" depends="logging,inputWSAdminData,confirmDeletionOutputFolder,confirmCopy" description="Read the defined Queues">
+		<if>
+			<and>
+				<isset property="deletion.choice" />
+				<equals arg1="${deletion.choice}" arg2="Y" />
+			</and>
+			<then>
+				<antcall target="clearOutput-QUEUE" />
+			</then>
+		</if>
+		<echo message="--- Reading the defined Queues and save them into the ${QueuesOutDir}. ---" />
+		<!--<echo message=" Connecting to host: ${remoteHost} Port: ${remoteSoapPort} . "/>-->
+		<wsadmin script="../scripts/resources/ReadQueues.py" lang="jython" properties="${resources.properties}" host="${remoteHost}" port="${remoteSoapPort}" user="${remoteAdminID}" password="${remoteAdminPasswd}" conntype="soap" failonerror="false">
+			<arg value="${QueuesOutDir}" />
+			<arg value="${remoteScope}" />
+		</wsadmin>
+		<if>
+			<and>
+				<isset property="copy.choice" />
+				<equals arg1="${copy.choice}" arg2="Y" />
+			</and>
+			<then>
+				<if>
+					<and>
+						<isset property="deletion.choice" />
+						<equals arg1="${deletion.choice}" arg2="Y" />
+					</and>
+					<then>
+						<antcall target="clearInput-QUEUE" />
+					</then>
+				</if>
+				<antcall target="copyResources-QUEUE" />
+			</then>
+		</if>
+	</target>
+
+	<!--
+   The readTopics target reads all the Topics
+  from the remote server and save them into the ${TopicOutDir} directory. 
+   -->
+
+	<!--
+   The readURLs target reads all the URLs
+  from the remote server and save them into the ${URLsOutDir} directory. 
+   -->
+	<target name="readURLs" depends="logging,inputWSAdminData,confirmDeletionOutputFolder,confirmCopy" description="Read the defined URLs">
+		<if>
+			<and>
+				<isset property="deletion.choice" />
+				<equals arg1="${deletion.choice}" arg2="Y" />
+			</and>
+			<then>
+				<antcall target="clearOutput-URLS" />
+			</then>
+		</if>
+		<echo message="--- Reading the defined URLs and save them into the ${URLsOutDir}. ---" />
+		<!--<echo message=" Connecting to host: ${remoteHost} Port: ${remoteSoapPort} . "/>-->
+		<wsadmin script="../scripts/resources/ReadURL.py" lang="jython" properties="${resources.properties}" host="${remoteHost}" port="${remoteSoapPort}" user="${remoteAdminID}" password="${remoteAdminPasswd}" conntype="soap" failonerror="false">
+			<arg value="${URLsOutDir}" />
+			<arg value="${remoteScope}" />
+		</wsadmin>
+		<if>
+			<and>
+				<isset property="copy.choice" />
+				<equals arg1="${copy.choice}" arg2="Y" />
+			</and>
+			<then>
+				<if>
+					<and>
+						<isset property="deletion.choice" />
+						<equals arg1="${deletion.choice}" arg2="Y" />
+					</and>
+					<then>
+						<antcall target="clearInput-URLS" />
+					</then>
+				</if>
+				<antcall target="copyResources-URLS" />
+			</then>
+		</if>
+	</target>
+
+	<target name="readALL" depends="logging, readActivationSpecs, readConnFactories, readDataSources, readJDBCProviders, readNameSpaceBindings, readSharedLibs,readQueues, readTopics, readURLs" description="Read all the resources.">
+	</target>
+
+	<!--
+   The createActivationSpecs target creates all the Activation Specification
+  related to properties files into the ${ActSpecsDir} directory. 
+   -->
+	<target name="createActivationSpecs" depends="logging">
+		<echo message="--- DeploymentManagerBin is ${DeploymentManagerBin}" />
+		<echo message=" resources.properties -->  ${resources.properties}" />
+		<foreach target="-createActivationSpec" param="theFile" inheritall="true">
+			<path>
+				<fileset dir="${ActSpecsDir}">
+					<include name="**/*.${originalExt}" />
+				</fileset>
+			</path>
+		</foreach>
+	</target>
+	<target name="createWebsphereVariables" depends="logging">
+		<foreach target="-createWebsphereVariable" param="theFile" inheritall="true">
+			<path>
+				<fileset dir="${WVarDir}">
+					<include name="**/*.${originalExt}" />
+				</fileset>
+			</path>
+		</foreach>
+	</target>
+	<target name="-createActivationSpec" description="Create the specified Activation Specification" depends="logging">
+		<echo message="--- Creating an Activation Specification using the ${theFile} file. ---" />
+
+
+		<echo message=" Connecting to host: ${destinationHost} Destination Soap Port: ${destinationSoapPort} " />
+		<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+			<arg line="-username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/resources/CreateActivationSpecs.py ${theFile} -lang jython -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info" />
+		</exec>
+		<echo>Result: ${result}</echo>
+		<if>
+			<and>
+				<isset property="result" />
+				<equals arg1="${result}" arg2="0" />
+			</and>
+			<then>
+				<var name="baseFile" value="" unset="true" />
+				<basename property="baseFile" file="${theFile}" />
+				<antcall target="markFilesProcessed">
+					<param name="filesFromDir" value="${ActSpecsDir}" />
+					<param name="filesToDir" value="${ActSpecsDir}" />
+					<param name="filesToMove" value="${baseFile}" />
+				</antcall>
+			</then>
+		</if>
+	</target>
+	<!--Creat WebSphere Variables -->
+	<target name="-createWebsphereVariable" description="Create the specified WebSphereVariables" depends="logging">
+		<echo message="--- Creating or Modified an WebSphere Variable using the ${theFile} file. ---" />
+		<echo message=" Connecting to host: ${destinationHost} Destination Soap Port: ${destinationSoapPort} " />
+		<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+			<arg line="-username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/resources/CreateWebSphereVariable.py ${theFile} -lang jython -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info" />
+		</exec>
+		<echo>Result: ${result}</echo>
+		<if>
+			<and>
+				<isset property="result" />
+				<equals arg1="${result}" arg2="0" />
+			</and>
+			<then>
+				<var name="baseFile" value="" unset="true" />
+				<basename property="baseFile" file="${theFile}" />
+				<antcall target="markFilesProcessed">
+					<param name="filesFromDir" value="${WVarDir}" />
+					<param name="filesToDir" value="${WVarDir}" />
+					<param name="filesToMove" value="${baseFile}" />
+				</antcall>
+			</then>
+		</if>
+	</target>
+	<!-- END WebSphere Variables -->
+	<!--The createConnFactories target creates all the Connection Factories  related to properties files into the ${ConnFactoriesDir} directory. -->
+
+	<target name="-createConnFactory" description="Create the specified Connection Factories">
+		<echo message="createConnFactory createConnFactory createConnFactory" />
+		<echo message="--- Creating a Connection Factory using the ${theFile} file. ---" />
+		<echo message="--- DeploymentManagerBin is ${DeploymentManagerBin}" />
+		<echo message=" resources.properties -->  ${resources.properties}" />
+		<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+			<arg line=" -username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/resources/CreateConnectionFactory.py ${theFile} -lang jython -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info" />
+		</exec>
+		<echo>Result: ${result}</echo>
+		<if>
+			<and>
+				<isset property="result" />
+				<equals arg1="${result}" arg2="0" />
+			</and>
+			<then>
+				<var name="baseFile" value="" unset="true" />
+				<basename property="baseFile" file="${theFile}" />
+				<antcall target="markFilesProcessed">
+					<param name="filesFromDir" value="${ConnFactoriesDir}" />
+					<param name="filesToDir" value="${ConnFactoriesDir}" />
+					<param name="filesToMove" value="${baseFile}" />
+				</antcall>
+			</then>
+		</if>
+	</target>
+	<target name="createConnFactories" depends="logging">
+		<echo message="PRIMA DeploymentManagerBin is ${DeploymentManagerBin}" />
+		<echo message="PRIMA resources.properties -->  ${resources.properties}" />
+		<foreach target="-createConnFactory" param="theFile" inheritall="true">
+			<path>
+				<fileset dir="${ConnFactoriesDir}">
+					<include name="**/*.${originalExt}" />
+				</fileset>
+			</path>
+		</foreach>
+	</target>
+
+
+	<target name="addJVMCustomPropertybyCluster" description="AddCustomPorperty to cluster members" depends="logging,inputNameCluster,inputNameProperty,inputValueProperty">
+		<echo message="--- Add CustomPorperty to cluster members ---" />
+		<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+			<arg line=" -username ${destinationAdminID} -password ${destinationAdminPasswd}  -f ../scripts/standalone/AddJVMCustomPropsForCluster.py ${input.NameCluster} ${input.NameProperty} ${input.ValueProperty} -lang jython -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info" />
+		</exec>
+		<echo>Result: ${result}</echo>
+	</target>
+	<target name="createDataSources" depends="logging">
+		<foreach target="-createDataSource" param="theFile" inheritall="true">
+			<path>
+				<fileset dir="${DataSourcesDir}">
+					<include name="**/*.${originalExt}" />
+				</fileset>
+			</path>
+		</foreach>
+	</target>
+
+	<target name="-createDataSource" description="Create the specified Data Sources" depends="logging">
+		<echo message="--- Creating a Data Source using the ${theFile} file. ---" />
+		<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+			<arg line="-username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/resources/CreateDatasource.py ${theFile} -lang jython -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info" />
+		</exec>
+		<echo>Result: ${result}</echo>
+		<if>
+			<and>
+				<isset property="result" />
+				<equals arg1="${result}" arg2="0" />
+			</and>
+			<then>
+				<var name="baseFile" value="" unset="true" />
+				<basename property="baseFile" file="${theFile}" />
+				<antcall target="markFilesProcessed">
+					<param name="filesFromDir" value="${DataSourcesDir}" />
+					<param name="filesToDir" value="${DataSourcesDir}" />
+					<param name="filesToMove" value="${baseFile}" />
+				</antcall>
+			</then>
+		</if>
+	</target>
+	<target name="createJDBCProviders">
+		<foreach target="-createJDBCProvider" param="theFile" inheritall="true">
+			<path>
+				<fileset dir="${JDBCProvidersDir}">
+					<include name="**/*.${originalExt}" />
+				</fileset>
+			</path>
+		</foreach>
+	</target>
+
+	<target name="-createJDBCProvider" description="Create the specified JDBC Provider" depends="logging">
+		<echo message="--- Creating a JDBC Provider using the ${theFile} file. ---" />
+		<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+			<arg line="-username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/resources/CreateJDBCProvider.py ${theFile} -lang jython -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info" />
+		</exec>
+		<echo>Result: ${result}</echo>
+		<if>
+			<and>
+				<isset property="result" />
+				<equals arg1="${result}" arg2="0" />
+			</and>
+			<then>
+				<var name="baseFile" value="" unset="true" />
+				<basename property="baseFile" file="${theFile}" />
+				<antcall target="markFilesProcessed">
+					<param name="filesFromDir" value="${JDBCProvidersDir}" />
+					<param name="filesToDir" value="${JDBCProvidersDir}" />
+					<param name="filesToMove" value="${baseFile}" />
+				</antcall>
+			</then>
+		</if>
+	</target>
+
+	<!--
+   The createNameSpaceBindings target creates all the name Space Bindings
+  related to properties files into the ${NameSpaceBindDir} directory. 
+   -->
+	<target name="createNameSpaceBindings" depends="-WARNING">
+		<foreach target="-createNameSpaceBinding" param="theFile" inheritall="true">
+			<path>
+				<fileset dir="${NameSpaceBindDir}">
+					<include name="**/*.${originalExt}" />
+				</fileset>
+			</path>
+		</foreach>
+	</target>
+
+	<target name="-createNameSpaceBinding" description="Create the specified Name Space Binding" depends="logging">
+		<echo message="--- Creating a Name Space Binding using the ${theFile} file. ---" />
+		<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+			<arg line="-username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/resources/CreateNameSpaceBinding.py ${theFile} -lang jython -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info"/>
+		</exec>
+		<echo>Result: ${result}</echo>
+		<if>
+			<and>
+				<isset property="result" />
+				<equals arg1="${result}" arg2="0" />
+			</and>
+			<then>
+				<var name="baseFile" value="" unset="true" />
+				<basename property="baseFile" file="${theFile}" />
+				<antcall target="markFilesProcessed">
+					<param name="filesFromDir" value="${NameSpaceBindDir}" />
+					<param name="filesToDir" value="${NameSpaceBindDir}" />
+					<param name="filesToMove" value="${baseFile}" />
+				</antcall>
+			</then>
+		</if>
+	</target>
+	<!-- Create Shared lib -->
+	<target name="createSharedLibs">
+		<foreach target="-createSharedLib" param="theFile" inheritall="true">
+			<path>
+				<fileset dir="${SharedLibDir}">
+					<include name="**/*.${originalExt}" />
+				</fileset>
+			</path>
+		</foreach>
+	</target>
+	<target name="-createSharedLib" depends="logging">
+		<echo message="--- Creating a Shared lib using the ${theFile} file. ---" />
+		<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+			<arg line="-username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/resources/CreateSharedLib.py ${theFile} -lang jython -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info" />
+		</exec>
+		<echo>Result: ${result}</echo>
+		<if>
+			<and>
+				<isset property="result" />
+				<equals arg1="${result}" arg2="0" />
+			</and>
+			<then>
+				<var name="baseFile" value="" unset="true" />
+				<basename property="baseFile" file="${theFile}" />
+				<antcall target="markFilesProcessed">
+					<param name="filesFromDir" value="${SharedLibDir}" />
+					<param name="filesToDir" value="${SharedLibDir}" />
+					<param name="filesToMove" value="${baseFile}" />
+				</antcall>
+			</then>
+		</if>
+	</target>
+	<!--CREATE CLUSTER-->
+	<target name="createStaticClusters">
+		<foreach target="-createStaticCluster" param="theFile" inheritall="true">
+			<path>
+				<fileset dir="${StaticClusterDir}">
+					<include name="**/*.${originalExt}" />
+				</fileset>
+			</path>
+		</foreach>
+	</target>
+	<target name="-createStaticCluster" depends="logging">
+		<echo message="--- Creating a Static Cluster using the ${theFile} file. ---" />
+		<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+			<arg line="-username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/resources/CreateAppSrvStaticCluster.py ${theFile} -lang jython -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info" />
+		</exec>
+		<echo>Result: ${result}</echo>
+		<if>
+			<and>
+				<isset property="result" />
+				<equals arg1="${result}" arg2="0" />
+			</and>
+			<then>
+				<var name="baseFile" value="" unset="true" />
+				<basename property="baseFile" file="${theFile}" />
+				<antcall target="markFilesProcessed">
+					<param name="filesFromDir" value="${StaticClusterDir}" />
+					<param name="filesToDir" value="${StaticClusterDir}" />
+					<param name="filesToMove" value="${baseFile}" />
+				</antcall>
+			</then>
+		</if>
+	</target>
+	<!-- END CREATE CLUSTER -->
+	<!--CREATE CLUSTER-->
+	<target name="createDynamicClusters">
+		<foreach target="-createDynamicCluster" param="theFile" inheritall="true">
+			<path>
+				<fileset dir="${DynamicClusterDir}">
+					<include name="**/*.${originalExt}" />
+				</fileset>
+			</path>
+		</foreach>
+	</target>
+	<target name="-createDynamicCluster" depends="logging">
+		<echo message="Create Dynamic Cluster ${theFile} file. ---" />
+		<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+			<arg line="-username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/resources/CreateAppSrvDynamicCluster.py ${theFile} -lang jython -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info" />
+		</exec>
+		<echo>Result: ${result}</echo>
+		<if>
+			<and>
+				<isset property="result" />
+				<equals arg1="${result}" arg2="0" />
+			</and>
+			<then>
+				<var name="baseFile" value="" unset="true" />
+				<basename property="baseFile" file="${theFile}" />
+				<antcall target="markFilesProcessed">
+					<param name="filesFromDir" value="${DynamicClusterDir}" />
+					<param name="filesToDir" value="${DynamicClusterDir}" />
+					<param name="filesToMove" value="${baseFile}" />
+				</antcall>
+			</then>
+		</if>
+	</target>
+	<!-- END CREATE CLUSTER -->
+	<!--
+   The createQueues target creates all the Queues 
+  related to properties files into the ${QueuesDir} directory. 
+   -->
+	<target name="createQueues">
+		<foreach target="createQueue" param="theFile" inheritall="true">
+			<path>
+				<fileset dir="${QueuesDir}">
+					<include name="**/*.${originalExt}" />
+				</fileset>
+			</path>
+		</foreach>
+	</target>
+
+	<target name="createQueue" description="Create the specified Queue">
+		<echo message="--- Creating a Queue using the ${theFile} file. ---" />
+		<!--
+      <wsadmin script="../scripts/resources/CreateQueue.py" lang="jython" properties="${resources.properties}" port="${soapPort}"  conntype="soap" user="${destinationAdminID}" password="${destinationAdminPasswd}" failonerror="false">
+         <arg value="${theFile}"/>
+      </wsadmin>
+   -->
+		<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+			<arg line="-username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/resources/CreateQueue.py ${theFile} -lang jython -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info" />
+		</exec>
+		<echo>Result: ${result}</echo>
+		<if>
+			<and>
+				<isset property="result" />
+				<equals arg1="${result}" arg2="0" />
+			</and>
+			<then>
+				<var name="baseFile" value="" unset="true" />
+				<basename property="baseFile" file="${theFile}" />
+				<antcall target="markFilesProcessed">
+					<param name="filesFromDir" value="${QueuesDir}" />
+					<param name="filesToDir" value="${QueuesDir}" />
+					<param name="filesToMove" value="${baseFile}" />
+				</antcall>
+			</then>
+		</if>
+	</target>
+
+	<target name="-setASPort" description="Set Ports For Application Server">
+		<echo message="--- Creating a Queue using the ${theFile} file. ---" />
+		<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+			<arg line="-username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/resources/SetASPorts.py ${theFile} -lang jython -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info" />
+		</exec>
+		<echo>Result: ${result}</echo>
+		<if>
+			<and>
+				<isset property="result" />
+				<equals arg1="${result}" arg2="0" />
+			</and>
+			<then>
+				<var name="baseFile" value="" unset="true" />
+				<basename property="baseFile" file="${theFile}" />
+				<antcall target="markFilesProcessed">
+					<param name="filesFromDir" value="${ASPortsDir}" />
+					<param name="filesToDir" value="${ASPortsDir}" />
+					<param name="filesToMove" value="${baseFile}" />
+				</antcall>
+			</then>
+		</if>
+	</target>
+	<target name="setASPorts">
+		<foreach target="-setASPort" param="theFile" inheritall="true">
+			<path>
+				<fileset dir="${ASPortsDir}">
+					<include name="**/*.${originalExt}" />
+				</fileset>
+			</path>
+		</foreach>
+	</target>
+	<!--
+   The createTopics target creates all the Topics 
+  related to properties files into the ${TopicsDir} directory. 
+   -->
+	<target name="createTopics">
+		<foreach target="createTopic" param="theFile" inheritall="true">
+			<path>
+				<fileset dir="${TopicDir}">
+					<include name="**/*.${originalExt}" />
+				</fileset>
+			</path>
+		</foreach>
+	</target>
+
+	<target name="createTopic" description="Create the specified Topic">
+		<echo message="--- Creating a Topic using the ${theFile} file. ---" />
+		<!--
+      <wsadmin script="../scripts/resources/CreateTopic.py" lang="jython" properties="${resources.properties}" port="${soapPort}"  conntype="soap" user="${destinationAdminID}" password="${destinationAdminPasswd}" failonerror="false">
+         <arg value="${theFile}"/>
+      </wsadmin>
+   -->
+		<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+			<arg line="-username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/resources/CreateTopic.py ${theFile} -lang jython -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info" />
+		</exec>
+		<echo>Result: ${result}</echo>
+		<if>
+			<and>
+				<isset property="result" />
+				<equals arg1="${result}" arg2="0" />
+			</and>
+			<then>
+				<var name="baseFile" value="" unset="true" />
+				<basename property="baseFile" file="${theFile}" />
+				<antcall target="markFilesProcessed">
+					<param name="filesFromDir" value="${TopicsDir}" />
+					<param name="filesToDir" value="${TopicsDir}" />
+					<param name="filesToMove" value="${baseFile}" />
+				</antcall>
+			</then>
+		</if>
+	</target>
+
+	<!--
+   The createURLs target creates all the URLs
+  related to properties files into the ${URLsDir} directory. 
+   -->
+	<target name="createURLs">
+		<foreach target="createURL" param="theFile" inheritall="true">
+			<path>
+				<fileset dir="${URLsDir}">
+					<include name="**/*.${originalExt}" />
+				</fileset>
+			</path>
+		</foreach>
+	</target>
+
+	<target name="createURL" description="Create the specified URL">
+		<echo message="--- Creating an URL using the ${theFile} file. ---" />
+		<!--
+      <wsadmin script="../scripts/resources/CreateURLS.py" lang="jython" properties="${resources.properties}" port="${soapPort}"  conntype="soap" user="${destinationAdminID}" password="${destinationAdminPasswd}" failonerror="false">
+         <arg value="${theFile}"/>
+      </wsadmin>
+   -->
+		<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+			<arg line="-username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/resources/CreateURLS.py ${theFile} -lang jython -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info" />
+		</exec>
+		<echo>Result: ${result}</echo>
+		<if>
+			<and>
+				<isset property="result" />
+				<equals arg1="${result}" arg2="0" />
+			</and>
+			<then>
+				<var name="baseFile" value="" unset="true" />
+				<basename property="baseFile" file="${theFile}" />
+				<antcall target="markFilesProcessed">
+					<param name="filesFromDir" value="${URLsDir}" />
+					<param name="filesToDir" value="${URLsDir}" />
+					<param name="filesToMove" value="${baseFile}" />
+				</antcall>
+			</then>
+		</if>
+	</target>
+
+
+	<target name="AllowDeleteIfExist" depends="selectResource" description="Ask to users what resources allow to delete if exist">
+		<antcall target="Single-AllowDeleteIfExist">
+			<param name="folder" value="${resourceType}" />
+		</antcall>
+	</target>
+
+	<target name="Single-AllowDeleteIfExist" depends="selectResource" description="Ask to users what resources allow to delete if exist">
+		<if>
+			<equals arg1="${folder}" arg2="ALL" />
+			<then>
+				<foreach target="-HiddenRenameInFile" param="theFile" inheritall="true">
+					<path>
+						<fileset dir="${ResourcesDir}">
+							<include name="**/*.${originalExt}" />
+						</fileset>
+					</path>
+					<param name="input.sourceString" value="deleteIfExist=0" />
+					<param name="input.destinationString" value="deleteIfExist=1" />
+				</foreach>
+			</then>
+			<else>
+				<foreach target="-HiddenRenameInFile" param="theFile" inheritall="true">
+					<path>
+						<fileset dir="${ResourcesDir}/${folder}">
+							<include name="**/*.${originalExt}" />
+						</fileset>
+					</path>
+					<param name="input.sourceString" value="deleteIfExist=0" />
+					<param name="input.destinationString" value="deleteIfExist=1" />
+				</foreach>
+			</else>
+		</if>
+	</target>
+
+	<target name="DenyDeleteIfExist" depends="selectResource" description="Ask to users what resources allow to delete if exist">
+		<antcall target="Single-DenyDeleteIfExist">
+			<param name="folder" value="${resourceType}" />
+		</antcall>
+	</target>
+
+	<target name="Single-DenyDeleteIfExist" depends="selectResource" description="Ask to users what resources deny to delete if exist">
+		<if>
+			<equals arg1="${folder}" arg2="ALL" />
+			<then>
+				<foreach target="-HiddenRenameInFile" param="theFile" inheritall="true">
+					<path>
+						<fileset dir="${ResourcesDir}">
+							<include name="**/*.${originalExt}" />
+						</fileset>
+					</path>
+					<param name="input.sourceString" value="deleteIfExist=1" />
+					<param name="input.destinationString" value="deleteIfExist=0" />
+				</foreach>
+			</then>
+			<else>
+				<foreach target="-HiddenRenameInFile" param="theFile" inheritall="true">
+					<path>
+						<fileset dir="${ResourcesDir}/${folder}">
+							<include name="**/*.${originalExt}" />
+						</fileset>
+					</path>
+					<param name="input.sourceString" value="deleteIfExist=1" />
+					<param name="input.destinationString" value="deleteIfExist=0" />
+				</foreach>
+			</else>
+		</if>
+	</target>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	<target name="markResourcesProcessed" depends="selectResource" description="Ask to users what resources to mark as processed">
+		<antcall target="markProcessed-${resourceType}" />
+	</target>
+
+	<target name="markResourcesNotProcessed" depends="selectResource" description="Ask to users what resources to mark as not processed">
+		<antcall target="markNotProcessed-${resourceType}" />
+	</target>
+	<target name="copyResources" depends="selectResource, confirmDeletionInputFolder" description="Ask to users what resources to copy from the read folders to the creation folders">
+		<if>
+			<and>
+				<isset property="deletion.choice" />
+				<equals arg1="${deletion.choice}" arg2="Y" />
+			</and>
+			<then>
+				<antcall target="clearInput-${resourceType}" />
+			</then>
+		</if>
+		<antcall target="copyResources-${resourceType}" />
+	</target>
+
+	<target name="clearOutput" depends="selectResource" description="Ask to users what resources delete from the read (output) folders">
+		<antcall target="clearOutput-${resourceType}" />
+	</target>
+
+	<target name="clearInput" depends="selectResource" description="Ask to users what resources delete from the create (input) folders">
+		<antcall target="clearInput-${resourceType}" />
+	</target>
+
+	<target name="selectResource" description="Get user input">
+		<echo>
+  On which resources do you want to operate? 
+    A.      Activation Specifications
+    C.      Connection Factories
+    D.      Data Sources
+    J.      JDBC Providers
+    N.      Name Space Bindings
+    Q.      Queues
+   S.    ShaeredLib
+    T.      Topics
+    U.      URLs
+   STCL. Static Cluster
+   DYCL. Dynamic Cluster
+   P.      Ports     
+    ALL. All resources
+      </echo>
+		<input message=" " validargs="A,C,D,J,N,Q,S,T,U,STCL,DYCL,ALL,P" addproperty="resource.choice" />
+		<condition property="resourceType" value="AS">
+			<equals arg1="${resource.choice}" arg2="A" />
+		</condition>
+		<condition property="resourceType" value="CF">
+			<equals arg1="${resource.choice}" arg2="C" />
+		</condition>
+		<condition property="resourceType" value="DS">
+			<equals arg1="${resource.choice}" arg2="D" />
+		</condition>
+		<condition property="resourceType" value="JDBCProvider">
+			<equals arg1="${resource.choice}" arg2="J" />
+		</condition>
+		<condition property="resourceType" value="NameSpaceBindings">
+			<equals arg1="${resource.choice}" arg2="N" />
+		</condition>
+		<condition property="resourceType" value="QUEUE">
+			<equals arg1="${resource.choice}" arg2="Q" />
+		</condition>
+		<condition property="resourceType" value="SharedLib">
+			<equals arg1="${resource.choice}" arg2="S" />
+		</condition>
+		<condition property="resourceType" value="TOPIC">
+			<equals arg1="${resource.choice}" arg2="T" />
+		</condition>
+		<condition property="resourceType" value="URLS">
+			<equals arg1="${resource.choice}" arg2="U" />
+		</condition>
+		<condition property="resourceType" value="STCL">
+			<equals arg1="${resource.choice}" arg2="STCL" />
+		</condition>
+		<condition property="resourceType" value="DYCL">
+			<equals arg1="${resource.choice}" arg2="DYCL" />
+		</condition>
+		<condition property="resourceType" value="PORTS">
+			<equals arg1="${resource.choice}" arg2="P" />
+		</condition>
+		<condition property="resourceType" value="ALL">
+			<equals arg1="${resource.choice}" arg2="ALL" />
+		</condition>
+		<echo>Selected resource: ${resourceType}</echo>
+	</target>
+
+	<target name="markProcessed-DYCL" description="Mark as processed resources.">
+		<echo message="--- Mark as processed ${resourceType}. ---" />
+		<antcall target="markFilesProcessed">
+			<param name="filesFromDir" value="${DynamicClusterDir}" />
+			<param name="filesToDir" value="${DynamicClusterDir}" />
+			<param name="filesToMove" value="*" />
+		</antcall>
+	</target>
+	<target name="markProcessed-STCL" description="Mark as processed resources.">
+		<echo message="--- Mark as processed ${resourceType}. ---" />
+		<antcall target="markFilesProcessed">
+			<param name="filesFromDir" value="${StaticClusterDir}" />
+			<param name="filesToDir" value="${StaticClusterDir}" />
+			<param name="filesToMove" value="*" />
+		</antcall>
+	</target>
+	<target name="markProcessed-AS" description="Mark as processed resources.">
+		<echo message="--- Mark as processed ${resourceType}. ---" />
+		<antcall target="markFilesProcessed">
+			<param name="filesFromDir" value="${ActSpecsDir}" />
+			<param name="filesToDir" value="${ActSpecsDir}" />
+			<param name="filesToMove" value="*" />
+		</antcall>
+	</target>
+	<target name="markProcessed-WVar" description="Mark as processed resources.">
+		<echo message="--- Mark as processed ${resourceType}. ---" />
+		<antcall target="markFilesProcessed">
+			<param name="filesFromDir" value="${WVarDir}" />
+			<param name="filesToDir" value="${WVarDir}" />
+			<param name="filesToMove" value="*" />
+		</antcall>
+	</target>
+	<target name="markProcessed-CF" description="Mark as processed resources.">
+		<echo message="--- Mark as processed ${resourceType}. ---" />
+		<antcall target="markFilesProcessed">
+			<param name="filesFromDir" value="${ConnFactoriesDir}" />
+			<param name="filesToDir" value="${ConnFactoriesDir}" />
+			<param name="filesToMove" value="*" />
+		</antcall>
+	</target>
+
+	<target name="markProcessed-DS" description="Mark as processed resources.">
+		<echo message="--- Mark as processed ${resourceType}. ---" />
+		<antcall target="markFilesProcessed">
+			<param name="filesFromDir" value="${DataSourcesDir}" />
+			<param name="filesToDir" value="${DataSourcesDir}" />
+			<param name="filesToMove" value="*" />
+		</antcall>
+	</target>
+
+	<target name="markProcessed-JDBCProvider" description="Mark as processed resources.">
+		<echo message="--- Mark as processed ${resourceType}. ---" />
+		<antcall target="markFilesProcessed">
+			<param name="filesFromDir" value="${JDBCProvidersDir}" />
+			<param name="filesToDir" value="${JDBCProvidersDir}" />
+			<param name="filesToMove" value="*" />
+		</antcall>
+	</target>
+
+	<target name="markProcessed-NameSpaceBindings" description="Mark as processed resources.">
+		<echo message="--- Mark as processed ${resourceType}. ---" />
+		<antcall target="markFilesProcessed">
+			<param name="filesFromDir" value="${NameSpaceBindDir}" />
+			<param name="filesToDir" value="${NameSpaceBindDir}" />
+			<param name="filesToMove" value="*" />
+		</antcall>
+	</target>
+
+	<target name="markProcessed-QUEUE" description="Mark as processed resources.">
+		<echo message="--- Mark as processed ${resourceType}. ---" />
+		<antcall target="markFilesProcessed">
+			<param name="filesFromDir" value="${QueuesDir}" />
+			<param name="filesToDir" value="${QueuesDir}" />
+			<param name="filesToMove" value="*" />
+		</antcall>
+	</target>
+	<target name="markProcessed-TOPIC" description="Mark as processed resources.">
+		<echo message="--- Mark as processed ${resourceType}. ---" />
+		<antcall target="markFilesProcessed">
+			<param name="filesFromDir" value="${TopicsDir}" />
+			<param name="filesToDir" value="${TopicsDir}" />
+			<param name="filesToMove" value="*" />
+		</antcall>
+	</target>
+	<target name="markProcessed-SharedLib" description="Mark as processed resources.">
+		<echo message="--- Mark as processed ${resourceType}. ---" />
+		<antcall target="markFilesProcessed">
+			<param name="filesFromDir" value="${SharedLibDir}" />
+			<param name="filesToDir" value="${SharedLibDir}" />
+			<param name="filesToMove" value="*" />
+		</antcall>
+	</target>
+
+	<target name="markProcessed-URLS" description="Mark as processed resources.">
+		<echo message="--- Mark as processed ${resourceType}. ---" />
+		<antcall target="markFilesProcessed">
+			<param name="filesFromDir" value="${URLsDir}" />
+			<param name="filesToDir" value="${URLsDir}" />
+			<param name="filesToMove" value="*" />
+		</antcall>
+	</target>
+
+	<target name="markProcessed-ALL" depends="markProcessed-DYCL, markProcessed-STCL, markProcessed-AS, markProcessed-CF, markProcessed-DS, markProcessed-JDBCProvider, markProcessed-NameSpaceBindings, markProcessed-QUEUE, markProcessed-SharedLib, markProcessed-TOPIC, markProcessed-URLS" description="Mark as processed resources.">
+	</target>
+	<target name="markFilesProcessed" description="Marks all the files as processed" depends="logging">
+		<echo message="--- Moving files ${filesToMove} from ${filesFromDir} to ${filesToDir} with ${processedExt} extension. ---" />
+		<move todir="${filesToDir}">
+			<fileset dir="${filesFromDir}">
+				<include name="**/${filesToMove}" />
+			</fileset>
+			<mapper type="glob" from="*.${originalExt}" to="*.${processedExt}" />
+		</move>
+	</target>
+
+	<target name="markAppProcessed" description="Marks all the files as processed" depends="logging">
+		<echo message="--- Moving files ${filesToMove} from ${filesFromDir} to ${filesToDir} with ${processedExt} extension. ---" />
+		<move todir="${filesToDir}">
+			<fileset dir="${filesFromDir}">
+				<include name="**/${filesToMove}" />
+			</fileset>
+			<mapper type="glob" from=".${originalApp}" to="*.${processedExt}" />
+		</move>
+	</target>
+
+	<target name="markNotProcessed-DYCL" description="Mark as processed resources.">
+		<echo message="--- Mark as processed ${resourceType}. ---" />
+		<antcall target="markFilesNotProcessed">
+			<param name="filesFromDir" value="${DynamicClusterDir}" />
+			<param name="filesToDir" value="${DynamicClusterDir}" />
+			<param name="filesToMove" value="*" />
+		</antcall>
+	</target>
+	<target name="markNotProcessed-STCL" description="Mark as processed resources.">
+		<echo message="--- Mark as processed ${resourceType}. ---" />
+		<antcall target="markFilesNotProcessed">
+			<param name="filesFromDir" value="${StaticClusterDir}" />
+			<param name="filesToDir" value="${StaticClusterDir}" />
+			<param name="filesToMove" value="*" />
+		</antcall>
+	</target>
+	<target name="markNotProcessed-AS" description="Mark as processed resources.">
+		<echo message="--- Mark as processed ${resourceType}. ---" />
+		<antcall target="markFilesNotProcessed">
+			<param name="filesFromDir" value="${ActSpecsDir}" />
+			<param name="filesToDir" value="${ActSpecsDir}" />
+			<param name="filesToMove" value="*" />
+		</antcall>
+	</target>
+	<target name="markNotProcessed-WVar" description="Mark as processed resources.">
+		<echo message="--- Mark as processed ${resourceType}. ---" />
+		<antcall target="markFilesNotProcessed">
+			<param name="filesFromDir" value="${WVarDir}" />
+			<param name="filesToDir" value="${WVarDir}" />
+			<param name="filesToMove" value="*" />
+		</antcall>
+	</target>
+	<target name="markNotProcessed-CF" description="Mark as processed resources.">
+		<echo message="--- Mark as processed ${resourceType}. ---" />
+		<antcall target="markFilesNotProcessed">
+			<param name="filesFromDir" value="${ConnFactoriesDir}" />
+			<param name="filesToDir" value="${ConnFactoriesDir}" />
+			<param name="filesToMove" value="*" />
+		</antcall>
+	</target>
+
+	<target name="markNotProcessed-DS" description="Mark as processed resources.">
+		<echo message="--- Mark as processed ${resourceType}. ---" />
+		<antcall target="markFilesNotProcessed">
+			<param name="filesFromDir" value="${DataSourcesDir}" />
+			<param name="filesToDir" value="${DataSourcesDir}" />
+			<param name="filesToMove" value="*" />
+		</antcall>
+	</target>
+
+	<target name="markNotProcessed-JDBCProvider" description="Mark as processed resources.">
+		<echo message="--- Mark as processed ${resourceType}. ---" />
+		<antcall target="markFilesNotProcessed">
+			<param name="filesFromDir" value="${JDBCProvidersDir}" />
+			<param name="filesToDir" value="${JDBCProvidersDir}" />
+			<param name="filesToMove" value="*" />
+		</antcall>
+	</target>
+
+	<target name="markNotProcessed-NameSpaceBindings" description="Mark as processed resources.">
+		<echo message="--- Mark as processed ${resourceType}. ---" />
+		<antcall target="markFilesNotProcessed">
+			<param name="filesFromDir" value="${NameSpaceBindDir}" />
+			<param name="filesToDir" value="${NameSpaceBindDir}" />
+			<param name="filesToMove" value="*" />
+		</antcall>
+	</target>
+
+	<target name="markNotProcessed-QUEUE" description="Mark as processed resources.">
+		<echo message="--- Mark as processed ${resourceType}. ---" />
+		<antcall target="markFilesNotProcessed">
+			<param name="filesFromDir" value="${QueuesDir}" />
+			<param name="filesToDir" value="${QueuesDir}" />
+			<param name="filesToMove" value="*" />
+		</antcall>
+	</target>
+	<target name="markNotProcessed-SharedLib" description="Mark as processed resources.">
+		<echo message="--- Mark as processed ${resourceType}. ---" />
+		<antcall target="markFilesNotProcessed">
+			<param name="filesFromDir" value="${SharedLibDir}" />
+			<param name="filesToDir" value="${SharedLibDir}" />
+			<param name="filesToMove" value="*" />
+		</antcall>
+	</target>
+	<target name="markNotProcessed-TOPIC" description="Mark as processed resources.">
+		<echo message="--- Mark as processed ${resourceType}. ---" />
+		<antcall target="markFilesNotProcessed">
+			<param name="filesFromDir" value="${TopicsDir}" />
+			<param name="filesToDir" value="${TopicsDir}" />
+			<param name="filesToMove" value="*" />
+		</antcall>
+	</target>
+
+	<target name="markNotProcessed-URLS" description="Mark as processed resources.">
+		<echo message="--- Mark as processed ${resourceType}. ---" />
+		<antcall target="markFilesNotProcessed">
+			<param name="filesFromDir" value="${URLsDir}" />
+			<param name="filesToDir" value="${URLsDir}" />
+			<param name="filesToMove" value="*" />
+		</antcall>
+	</target>
+
+	<target name="markNotProcessed-ALL" depends="markNotProcessed-DYCL, markNotProcessed-STCL ,markNotProcessed-AS, markNotProcessed-CF, markNotProcessed-DS, markNotProcessed-JDBCProvider, markNotProcessed-NameSpaceBindings, markNotProcessed-QUEUE, markNotProcessed-SharedLib, markNotProcessed-TOPIC, markNotProcessed-URLS" description="Mark as processed resources.">
+	</target>
+	<target name="markFilesNotProcessed" description="Marks all the files as not processed">
+		<echo message="--- Moving files ${filesToMove} from ${filesFromDir} to ${filesToDir} with ${originalExt} extension. ---" />
+		<move todir="${filesToDir}">
+			<fileset dir="${filesFromDir}">
+				<include name="**/${filesToMove}" />
+			</fileset>
+			<mapper type="glob" from="*.${processedExt}" to="*.${originalExt}" />
+		</move>
+	</target>
+	<target name="copyResources-SharedLib" description="Copy resources from out dir to create dir.">
+		<echo message="--- Copy ${resourceType} resources. ---" />
+		<copy todir="${SharedLibDir}">
+			<fileset dir="${SharedLibOutDir}" />
+		</copy>
+	</target>
+	<target name="copyResources-Ports" description="Copy resources from out dir to create dir.">
+		<echo message="--- Copy ${resourceType} resources. ---" />
+		<copy todir="${ASPortsDir}">
+			<fileset dir="${ASPortsOutDir}" />
+		</copy>
+	</target>
+	<target name="copyResources-AS" description="Copy resources from out dir to create dir.">
+		<echo message="--- Copy AS resources. ---" />
+		<copy todir="${ActSpecsDir}">
+			<fileset dir="${ActSpecsOutDir}" />
+		</copy>
+	</target>
+	<target name="copyResources-WVar" description="Copy resources from out dir to create dir.">
+		<echo message="--- Copy AS resources. ---" />
+		<copy todir="${WVarDir}">
+			<fileset dir="${WVarOutDir}" />
+		</copy>
+	</target>
+	<target name="copyResources-Topic" description="Copy resources from out dir to create dir.">
+		<echo message="--- Copy AS resources. ---" />
+		<copy todir="${TopicDir}">
+			<fileset dir="${TopicOutDir}" />
+		</copy>
+	</target>
+
+	<target name="copyResources-CF" description="Copy resources from out dir to create dir.">
+		<echo message="--- Copy CF resources. ---" />
+		<copy todir="${ConnFactoriesDir}">
+			<fileset dir="${ConnFactoriesOutDir}" />
+		</copy>
+	</target>
+
+	<target name="copyResources-DS" description="Copy resources from out dir to create dir.">
+		<echo message="--- Copy DS resources. ---" />
+		<copy todir="${DataSourcesDir}">
+			<fileset dir="${DataSourcesOutDir}" />
+		</copy>
+	</target>
+
+	<target name="copyResources-JDBCProvider" description="Copy resources from out dir to create dir.">
+		<echo message="--- Copy JDBCProvider resources. ---" />
+		<copy todir="${JDBCProvidersDir}">
+			<fileset dir="${JDBCProvidersOutDir}" />
+		</copy>
+	</target>
+
+	<target name="copyResources-NameSpaceBindings" description="Copy resources from out dir to create dir.">
+		<echo message="--- Copy NameSpaceBindings resources. ---" />
+		<copy todir="${NameSpaceBindDir}">
+			<fileset dir="${NameSpaceBindOutDir}" />
+		</copy>
+	</target>
+
+	<target name="copyResources-QUEUE" description="Copy resources from out dir to create dir.">
+		<echo message="--- Copy QUEUE resources. ---" />
+		<copy todir="${QueuesDir}">
+			<fileset dir="${QueuesOutDir}" />
+		</copy>
+	</target>
+
+	<target name="copyResources-TOPIC" description="Copy resources from out dir to create dir.">
+		<echo message="--- Copy TOPIC resources. ---" />
+		<copy todir="${TopicsDir}">
+			<fileset dir="${TopicOutDir}" />
+		</copy>
+	</target>
+
+	<target name="copyResources-URLS" description="Copy resources from out dir to create dir.">
+		<echo message="--- Copy URLS resources. ---" />
+		<copy todir="${URLsDir}">
+			<fileset dir="${URLsOutDir}" />
+		</copy>
+	</target>
+	<target name="copyResources-DYCL" description="Copy resources from out dir to create dir.">
+		<echo message="--- Copy DYCL resources. ---" />
+		<copy todir="${DynamicClusterDir}">
+			<fileset dir="${DynamicClusterOutDir}" />
+		</copy>
+	</target>
+	<target name="copyResources-ALL" depends="copyResources-AS, copyResources-CF, copyResources-DS, copyResources-JDBCProvider, copyResources-NameSpaceBindings, copyResources-QUEUE, copyResources-TOPIC, copyResources-URLS, copyResources-SharedLib" description="Mark as processed resources.">
+	</target>
+	<target name="clearOutput-DYCL" description="Delete resources from out dir.">
+		<echo message="--- Clear DYCL resources from Output folder. ---" />
+		<delete>
+			<fileset dir="${DynamicClusterOutDir}" includes="**/*" />
+		</delete>
+	</target>
+	<target name="clearOutput-SharedLib" description="Delete resources from out dir.">
+		<echo message="--- Clear Shared Lib resources from Output folder. ---" />
+		<delete>
+			<fileset dir="${SharedLibOutDir}" includes="**/*" />
+		</delete>
+	</target>
+	<target name="clearOutput-P" description="Delete resources from output dir.">
+		<echo message="--- Clear Ports resources from Output folder. ---" />
+		<delete>
+			<fileset dir="${ASPortsOutDir}" includes="**/*" />
+		</delete>
+	</target>
+	<target name="clearOutput-AS" description="Delete resources from out dir.">
+		<echo message="--- Clear AS resources from Output folder. ---" />
+		<delete>
+			<fileset dir="${ActSpecsOutDir}" includes="**/*" />
+		</delete>
+	</target>
+	<target name="clearOutput-WVAr" description="Delete resources from out dir.">
+		<echo message="--- Clear AS resources from Output folder. ---" />
+		<delete>
+			<fileset dir="${WvarOutDir}" includes="**/*" />
+		</delete>
+	</target>
+
+	<target name="clearOutput-CF" description="Delete resources from out dir.">
+		<echo message="--- Clear CF resources from Output folder. ---" />
+		<delete>
+			<fileset dir="${ConnFactoriesOutDir}" includes="**/*" />
+		</delete>
+	</target>
+
+	<target name="clearOutput-DS" description="Delete resources from out dir.">
+		<echo message="--- Clear DS resources from Output folder. ---" />
+		<delete>
+			<fileset dir="${DataSourcesOutDir}" includes="**/*" />
+		</delete>
+	</target>
+
+	<target name="clearOutput-JDBCProvider" description="Delete resources from out dir.">
+		<echo message="--- Clear JDBCProvider resources from Output folder. ---" />
+		<delete>
+			<fileset dir="${JDBCProvidersOutDir}" includes="**/*" />
+		</delete>
+	</target>
+
+	<target name="clearOutput-NameSpaceBindings" description="Delete resources from out dir.">
+		<echo message="--- Clear NameSpaceBindings resources from Output folder. ---" />
+		<delete>
+			<fileset dir="${NameSpaceBindOutDir}" includes="**/*" />
+		</delete>
+	</target>
+
+	<target name="clearOutput-QUEUE" description="Delete resources from out dir.">
+		<echo message="--- Clear QUEUE resources from Output folder. ---" />
+		<delete>
+			<fileset dir="${QueuesOutDir}" includes="**/*" />
+		</delete>
+	</target>
+
+	<target name="clearOutput-TOPIC" description="Delete resources from out dir.">
+		<echo message="--- Clear TOPIC resources from Output folder. ---" />
+		<delete>
+			<fileset dir="${TopicOutDir}" includes="**/*" />
+		</delete>
+	</target>
+
+	<target name="clearOutput-URLS" description="Delete resources from out dir.">
+		<echo message="--- Clear URLS resources from Output folder. ---" />
+		<delete>
+			<fileset dir="${URLsOutDir}" includes="**/*" />
+		</delete>
+	</target>
+	<target name="clearOutput-ALL" depends="clearOutput-AS, clearOutput-CF, clearOutput-DS, clearOutput-JDBCProvider, clearOutput-NameSpaceBindings, clearOutput-QUEUE, clearOutput-TOPIC, clearOutput-URLS, clearOutput-SharedLib,clearOutput-DYCL,clearInput-P" description="Clear output resources.">
+	</target>
+
+	<target name="clearInput-SharedLib" description="Delete resources from in dir.">
+		<echo message="--- Clear Shared Lib resources from Input Folder. ---" />
+		<delete>
+			<fileset dir="${SharedLibDir}" includes="**/*" />
+		</delete>
+	</target>
+	<target name="clearInput-P" description="Delete PORTS resources from input dir.">
+		<echo message="--- Clear Ports resources from Input Folder. ---" />
+		<delete>
+			<fileset dir="${ASPortsDir}" includes="**/*" />
+		</delete>
+	</target>
+	<target name="clearInput-AS" description="Delete resources from in dir.">
+		<echo message="--- Clear Input AS resources from Input Folder. ---" />
+		<delete>
+			<fileset dir="${ActSpecsDir}" includes="**/*" />
+		</delete>
+	</target>
+	<target name="clearInput-WVar" description="Delete resources from in dir.">
+		<echo message="--- Clear Input AS resources from Input Folder. ---" />
+		<delete>
+			<fileset dir="${WVarDir}" includes="**/*" />
+		</delete>
+	</target>
+	<target name="clearInput-Topic" description="Delete resources from in dir.">
+		<echo message="--- Clear Input AS resources from Input Folder. ---" />
+		<delete>
+			<fileset dir="${TopicDir}" includes="**/*" />
+		</delete>
+	</target>
+	<target name="clearInput-Ports" description="Delete resources from input  dir.">
+		<echo message="--- Clear Input AS Ports resources from Input Folder. ---" />
+		<delete>
+			<fileset dir="${ASPortsDir}" includes="**/*" />
+		</delete>
+	</target>
+	<target name="clearInput-CF" description="Delete resources from in dir.">
+		<echo message="--- Clear CF  resources from Input Folder. ---" />
+		<delete>
+			<fileset dir="${ConnFactoriesDir}" includes="**/*" />
+		</delete>
+	</target>
+
+	<target name="clearInput-DS" description="Delete resources from in dir.">
+		<echo message="--- Clear DS resources from Input Folder. ---" />
+		<delete>
+			<fileset dir="${DataSourcesDir}" includes="**/*" />
+		</delete>
+	</target>
+
+	<target name="clearInput-JDBCProvider" description="Delete resources from in dir.">
+		<echo message="--- Clear JDBCProvider resources from Input Folder. ---" />
+		<delete>
+			<fileset dir="${JDBCProvidersDir}" includes="**/*" />
+		</delete>
+	</target>
+
+	<target name="clearInput-NameSpaceBindings" description="Delete resources from in dir.">
+		<echo message="--- Clear NameSpaceBindings resources from Input Folder . ---" />
+		<delete>
+			<fileset dir="${NameSpaceBindDir}" includes="**/*" />
+		</delete>
+	</target>
+	<target name="clearInput-DYCL" description="Delete resources from in dir.">
+		<echo message="--- Clear DYCL resources from Input Folder. ---" />
+		<delete>
+			<fileset dir="${DynamicClusterDir}" includes="**/*" />
+		</delete>
+	</target>
+	<target name="clearInput-QUEUE" description="Delete resources from in dir.">
+		<echo message="--- Clear QUEUE resources. ---" />
+		<delete>
+			<fileset dir="${QueuesDir}" includes="**/*" />
+		</delete>
+	</target>
+
+	<target name="clearInput-TOPIC" description="Delete resources from in dir.">
+		<echo message="--- Clear TOPIC resources. ---" />
+		<delete>
+			<fileset dir="${TopicsDir}" includes="**/*" />
+		</delete>
+	</target>
+
+	<target name="clearInput-URLS" description="Delete resources from in dir.">
+		<echo message="--- Clear URLS resources. ---" />
+		<delete>
+			<fileset dir="${URLsDir}" includes="**/*" />
+		</delete>
+	</target>
+
+	<target name="clearInput-ALL" depends="clearInput-AS, clearInput-CF, clearInput-DS, clearInput-JDBCProvider, clearInput-NameSpaceBindings, clearInput-QUEUE, clearInput-TOPIC, clearInput-SharedLib , clearInput-URLS,clearInput-DYCL,clearInput-P" description="Clear input resources.">
+	</target>
+
+
+
+
+	<target name="deployApp" description="Install applications from ${application.deployment.dir} directory" depends="logging">
+		<input message="Do you have a property file? " validargs="Y,N" addproperty="props.choose" />
+		<if>
+			<equals arg1="${props.choose}" arg2="Y" />
+			<then>
+				<echo>Install by Property Files saved in ${ApplicationDeploymentPropsDir}</echo>
+				<antcall target="-deployAppbyProps" />
+			</then>
+			<else>
+				<echo>Install Using Questions</echo>
+				<antcall target="-deployApp" />
+			</else>
+		</if>
+	</target>
+	<target name="-deployApp" description="Install applications from ${application.deployment.dir} directory" depends="logging">
+		<input message="Insert Application Name: [The Name of Application without extension]" addproperty="deploy.application.name" />
+		<input message="Insert Scope Name: [The Name of the Deployment Target (CLUSTER or SERVER) : If the scope is a server write NODE:SERVER as scope]" addproperty="deploy.scope.name" />
+		<echo message="--- Installing an application using the ${deploy.application.name}.ear file. ---" />
+		<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+			<arg line="-username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/resources/DeployApplication.py ${deploy.application.name} ${deploy.scope.name} ${application.deployment.dir} -lang jython -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info" />
+		</exec>
+		<echo>Result: ${result}</echo>
+		<if>
+			<and>
+				<isset property="result" />
+				<equals arg1="${result}" arg2="0" />
+			</and>
+			<then>
+				<var name="baseFile" value="" unset="true" />
+				<basename property="baseFile" file="${deploy.application.name}.ear" />
+				<antcall target="markAppProcessed">
+					<param name="filesFromDir" value="${application.deployment.dir}" />
+					<param name="filesToDir" value="${application.deployment.dir}" />
+					<param name="filesToMove" value="${baseFile}" />
+				</antcall>
+			</then>
+		</if>
+	</target>
+	<target name="-deployAppbyProps" description="Install applications from ${application.deployment.dir} directory using property ${ApplicationDeploymentPropsDir}" depends="logging">
+		<input message="Insert Application Name: [The Name of Application without .ear extension]" addproperty="deploy.application.name" />
+		<echo message="--- Installing an application using the ${application.deployment.dir}/${deploy.application.name}.ear file and ${ApplicationDeploymentPropsDir}/${deploy.application.name} file. ---" />
+		<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+			<arg line="-username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/resources/DeployApplication.py ${ApplicationDeploymentPropsDir}/${deploy.application.name}.properties -lang jython -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info" />
+		</exec>
+		<echo>Result: ${result}</echo>
+		<if>
+			<and>
+				<isset property="result" />
+				<equals arg1="${result}" arg2="0" />
+			</and>
+			<then>
+				<var name="baseFile" value="" unset="true" />
+				<basename property="baseFile" file="${deploy.application.name}.ear" />
+				<antcall target="markFilesProcessed">
+					<param name="filesFromDir" value="${application.deployment.dir}" />
+					<param name="filesToDir" value="${application.deployment.dir}" />
+					<param name="filesToMove" value="${baseFile}" />
+				</antcall>
+			</then>
+		</if>
+	</target>
+	<target name="markAppFilesProcessed" description="Marks all the files as processed" depends="logging">
+		<echo message="--- Moving files ${filesToMove} from ${filesFromDir} to ${filesToDir} with ${processedExt} extension. ---" />
+		<move todir="${filesToDir}">
+			<fileset dir="${filesFromDir}">
+				<include name="**/${filesToMove}" />
+			</fileset>
+			<mapper type="glob" from="*.${originalApp}" to="*.${processedExt}" />
+		</move>
+	</target>
+
+	<target name="markAppNotProcessed-Serv1" description="Mark as not processed applications." depends="logging">
+		<echo message="--- Mark as not processed ${ServerName}. ---" />
+		<antcall target="markAppFilesNotProcessed">
+			<param name="filesFromDir" value="${Serv1Dir}" />
+			<param name="filesToDir" value="${Serv1Dir}" />
+			<param name="filesToMove" value="*" />
+		</antcall>
+	</target>
+
+	<target name="markAppNotProcessed-Serv2" description="Mark as not processed applications." depends="logging">
+		<echo message="--- Mark as not processed ${ServerName}. ---" />
+		<antcall target="markAppFilesNotProcessed">
+			<param name="filesFromDir" value="${Serv2Dir}" />
+			<param name="filesToDir" value="${Serv2Dir}" />
+			<param name="filesToMove" value="*" />
+		</antcall>
+	</target>
+
+	<target name="markAppNotProcessed-Serv3" description="Mark as not processed applications." depends="logging">
+		<echo message="--- Mark as not processed ${ServerName}. ---" />
+		<antcall target="markAppFilesNotProcessed">
+			<param name="filesFromDir" value="${Serv3Dir}" />
+			<param name="filesToDir" value="${Serv3Dir}" />
+			<param name="filesToMove" value="*" />
+		</antcall>
+	</target>
+
+	<target name="markAppNotProcessed-Serv4" description="Mark as not processed applications." depends="logging">
+		<echo message="--- Mark as not processed ${ServerName}. ---" />
+		<antcall target="markAppFilesNotProcessed">
+			<param name="filesFromDir" value="${Serv4Dir}" />
+			<param name="filesToDir" value="${Serv4Dir}" />
+			<param name="filesToMove" value="*" />
+		</antcall>
+	</target>
+
+	<target name="markAppNotProcessed-ALL" depends="logging,markAppNotProcessed-Serv1, markAppNotProcessed-Serv2, markAppNotProcessed-Serv3, markAppNotProcessed-Serv4" description="Mark as not processed applications.">
+	</target>
+
+	<target name="markAppFilesNotProcessed" description="Marks all the files as not processed" depends="logging">
+		<echo message="--- Moving files ${filesToMove} from ${filesFromDir} to ${filesToDir} with ${originalApp} extension. ---" />
+		<move todir="${filesToDir}">
+			<fileset dir="${filesFromDir}">
+				<include name="**/${filesToMove}" />
+			</fileset>
+			<mapper type="glob" from="*.${processedExt}" to="*.${originalApp}" />
+		</move>
+	</target>
+	<target name="test">
+		<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+			<arg line="-username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/standalone/TestInput.py  -lang jython -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info" />
+		</exec>
+		<echo>Result: ${result}</echo>
+	</target>
+
+	<target name="RenewPluginCertificate" description="Change Expiration Date for Plugin Certificate" depends="logging,-inputExpirationDays">
+		<if>
+			<equals arg1="${expDays}" arg2="numbersDays" />
+			<then>
+				<input message="Insert Number of days [Maximum 7300] " addproperty="input.customNumberOfDays" />
+				<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+					<arg line="-username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/standalone/RenewPluginPersonalCertificates.py ${input.customNumberOfDays} -lang jython -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info" />
+				</exec>
+				<echo>Result: ${result}</echo>
+			</then>
+			<else>
+				<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+					<arg line="-username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/standalone/RenewPluginPersonalCertificates.py ${expDays} -lang jython -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info" />
+				</exec>
+				<echo>Result: ${result}</echo>
+			</else>
+		</if>
+	</target>
+
+	<target name="-inputExpirationDays" description="Insert Choose" depends="logging">
+		<echo>
+     Which Type of Exipration Do you want to set? 
+       A.      Maximum
+       B.      Default
+       C.      Numbers of Days
+      </echo>
+		<input message=" " validargs="A,B,C" addproperty="expirationdays.choice" />
+		<condition property="expDays" value="maximum">
+			<equals arg1="${expirationdays.choice}" arg2="A" />
+		</condition>
+		<condition property="expDays" value="default">
+			<equals arg1="${expirationdays.choice}" arg2="B" />
+		</condition>
+		<condition property="expDays" value="numbersDays">
+			<equals arg1="${expirationdays.choice}" arg2="C" />
+		</condition>
+	</target>
+
+
+
+
+	<target name="fixChiper" description="Insert Exipration Date" depends="logging,-inputExpirationDays">
+		<if>
+			<equals arg1="${expDays}" arg2="numbersDays" />
+			<then>
+				<input message="Insert Number of days [Maximum 7300] " addproperty="input.customNumberOfDays" />
+				<echo>Connect to Destination Host</echo>
+				<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+					<arg line="-username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/standalone/RenewPluginPersonalCertificates.py ${input.customNumberOfDays} -lang jython -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info" />
+				</exec>
+				<echo>Result: ${result}</echo>
+			</then>
+			<else>
+				<echo>Connect to Destination Host</echo>
+				<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+					<arg line="-username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/standalone/RenewPluginPersonalCertificates.py ${expDays} -lang jython -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info" />
+				</exec>
+				<echo>Result: ${result}</echo>
+			</else>
+		</if>
+	</target>
+
+	<target name="-InputTypeChiperConfiguration" description="Insert Choose" depends="logging">
+		<echo>
+      Which Level of Security do you want to apply? 
+         A. MIXED_SSL_TLS_V1.1   (SSL2,SSLV3,TLSV1.0,TLSV1.1)
+         B. MIXED_SSL_TLS_V1.2   (SSL2,SSLV3,TLSV1.0,TLSV1.1,TLSV1.2)
+         C. ECDHE                (ONLY TLSv1.2)    
+         D. HIGH                 (ONLY TLS WITH STRONG CHIPERS)   
+         E. HIGH_ECDHE           (ONLY TLS WITH STRONGEST CHIPERS)
+      </echo>
+		<input message=" " validargs="A,B,C,D,E" addproperty="chiperConfig.choice" />
+		<condition property="chiperConfig" value="MIXED_SSL_TLS_V1.1">
+			<equals arg1="${chiperConfig.choice}" arg2="A" />
+		</condition>
+		<condition property="chiperConfig" value="MIXED_SSL_TLS_V1.2">
+			<equals arg1="${chiperConfig.choice}" arg2="B" />
+		</condition>
+		<condition property="chiperConfig" value="ECDHE">
+			<equals arg1="${chiperConfig.choice}" arg2="C" />
+		</condition>
+		<condition property="chiperConfig" value="HIGH">
+			<equals arg1="${chiperConfig.choice}" arg2="D" />
+		</condition>
+		<condition property="chiperConfig" value="HIGH_ECDHE">
+			<equals arg1="${chiperConfig.choice}" arg2="E" />
+		</condition>
+	</target>
+
+	<target name="-InputSSLConfigToChange" description="Insert Choose" depends="logging">
+		<input message="Insert Name of SSLConfig to Change (Case Sensitive) " addproperty="sslConfigToChange" />
+	</target>
+
+	<target name="FixChiperLevel" depends="logging,-InputSSLConfigToChange,-InputTypeChiperConfiguration">
+		<echo>Connect to Destination Host</echo>
+		<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+			<arg line="-username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/standalone/FixChipers.py ${chiperConfig} ${sslConfigToChange} -lang jython -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info" />
+		</exec>
+		<echo>Result: ${result}</echo>
+	</target>
+
+	<!-- NEW TARGET DEPLOY POLICY FILES -->
+	<!-- NEW TARGET DEPLOY POLICY FILES -->
+	<target name="deploy-policyFiles" depends="download-policy-files">
+		<if>
+			<available file="${unrestricted-policy.path-trimmed}" type="dir" />
+			<then>
+				<echo message="Directory ${unrestricted-policy.path-trimmed} already exists" />
+			</then>
+			<else>
+				<echo message=" create dir ${unrestricted-policy.path-trimmed}" />
+				<mkdir dir="/${unrestricted-policy.path-trimmed}" />
+			</else>
+		</if>
+		<copy file="/tmp/US_export_policy.jar" tofile="/${unrestricted-policy.path-trimmed}/US_export_policy.jar" />
+		<copy file="/tmp/local_policy.jar" tofile="/${unrestricted-policy.path-trimmed}/local_policy.jar" />
+	</target>
+
+	<target name="download-policy-files">
+		<get src="${RepositoryHost}/unrestricted/US_export_policy.jar" dest="/tmp/US_export_policy.jar" verbose="true" usetimestamp="true" />
+		<get src="${RepositoryHost}/unrestricted/local_policy.jar" dest="/tmp/local_policy.jar" verbose="true" usetimestamp="true" />
+	</target>
+
+	<target name="setupUnrestrictedPolicyFiles">
+		<input addproperty="level-was" message="The WebSphere Application Server is up or equal to 7.0.0.45 or 8.5.5.14) [YES or NO] [Default NO]" validargs="YES,NO" defaultvalue="NO" />
+		<if>
+			<equals arg1="${level-was}" arg2="YES" />
+			<then>
+				<property name="unrestricted.default.path" value="${WAS_Installed_dir}/java/jre/lib/security/policy/unlimited/" />
+				<input addproperty="policy-files-path-agree" message="The Standard path for security policy files is ${unrestricted.default.path} are you agree? [YES or NO] [Default YES]" validargs="YES,NO" defaultvalue="YES" />
+				<if>
+					<equals arg1="${policy-files-path-agree}" arg2="YES" />
+					<then>
+						<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+							<arg line="-username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/standalone/setupUnrestrictedPolicyCP.py ${unrestricted.default.path}  -lang jython -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info" />
+						</exec>
+					</then>
+					<else>
+						<echo> Run newly the configuration and choose the correct path </echo>
+					</else>
+				</if>
+			</then>
+			<else>
+				<input addproperty="unrestricted-policy.path" message="Where do you want to setup policy files? [Default ${unrestricted.path}]" defaultvalue="${unrestricted.path}" />
+				<propertyregex property="unrestricted-policy.path-trimmed" input="${unrestricted-policy.path}" defaultValue="${unrestricted-policy.path}" regexp="\s" replace="" global="true" />
+				<antcall target="download-policy-files" />
+				<antcall target="deploy-policyFiles" />
+				<exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+					<arg line="-username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/standalone/setupUnrestrictedPolicyCP.py /${unrestricted-policy.path-trimmed}  -lang jython -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info" />
+				</exec>
+				<echo>Result: ${result}</echo>
+			</else>
+		</if>
+	</target>
+	<!-- NEW TARGET DEPLOY POLICY FILES -->
+	<target name="initDmgrConf">
+		<if>
+			<equals arg1="${already.set.dmgr.source}" arg2="0" />
+			<then>
+				<echo>For the first time you need to configure Dmgr Source</echo>
+				<antcall target="ChangeDmgrSource" />
+				<replaceregexp file="${resources.properties}" match="already.set.dmgr.source=(.*)" replace="already.set.dmgr.source=1" byline="true" />
+			</then>
+		</if>
+		<if>
+			<equals arg1="${already.set.dmgr.target}" arg2="0" />
+			<then>
+				<echo>For the first time you need to configure Dmgr Target </echo>
+				<antcall target="ChangeDmgrTarget" />
+				<replaceregexp file="${resources.properties}" match="already.set.dmgr.target=(.*)" replace="already.set.dmgr.target=1" byline="true" />
+			</then>
+		</if>
+	</target>
+	<target name="checkMonitorPolicy">
+		<wsadmin script="../scripts/standalone/checkMonitorPolicy.py" lang="jython" properties="${resources.properties}" host="${destinationHost}" port="${destinationSoapPort}" user="${destinationAdminID}" password="${destinationAdminPasswd}" conntype="soap" failonerror="false">
+			<arg value="-interactive" />
+		</wsadmin>
+	</target>
+</project>

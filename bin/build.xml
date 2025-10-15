@@ -1,0 +1,668 @@
+<?xml version = "1.0"?>
+<project name="Sergio Stinchi Configuration Tool" default="-install-was">
+	<taskdef resource="net/sf/antcontrib/antcontrib.properties">
+		<classpath>
+			<pathelement location="../ant-contrib/ant-contrib-1.0b3.jar" />
+		</classpath>
+	</taskdef>
+	<target name="versionInfo">
+		<echo/>
+		<echo>#################################</echo>
+		<echo> Framework Version ${version.level}</echo>
+		<echo> Build Date ${build.date}</echo>
+		<echo>#################################</echo>
+		<echo/>
+		
+	</target>
+	<target name="info">
+		<echo>Targets:
+		-----------------------------------------------
+		Create Function
+		-----------------------------------------------
+		# remote-install-im (v 1.0) (Download zip File from remote repository and install IM)
+		# local-install-im (v 1.0) (Download zip File from local repository and install IM)
+		# uninstall-im (v 1.0) (Uninstall IBM IM)
+		# retrieve-packages-installed
+		# install-binary-products (Install OR FIX WAS IHS AND Plugin without Install IM)
+		# uninstall-binary-products (Uninstall WAS IHS AND Plugin without uninstall IM)
+		# install-all  (Install OR FIX WAS IHS AND Plugin AND Install IM)
+		# uninstall-all (Uninstall WAS IHS AND Plugin AND Uninstall IM)
+		# install-only-was (Install OR FIX only WAS)
+		# uninstall-only-was
+		# install-only-ihs (Install OR FIX only IHS)
+		# uninstall-only-ihs
+		# install-only-plg (Install OR FIX only PLUGIN)
+		# uninstall-only-plg 
+		-----------------------------------------------
+		</echo>
+		<echo>RepositoryHost = ${RepositoryHost}</echo>
+		<echo>WAS_repositoryhost = ${WAS_repositoryhost}</echo>
+		<echo>IM_installerzip = ${IM_installerzip}</echo>
+
+	</target>
+	<target name="init">
+		<echo>Which Action do you want to do?
+			COD  DESCRIPTION
+			-----------------------------------------------
+			INST  Install Application Server
+			CONF  Configure Application Server
+			-----------------------------------------------	
+		</echo>
+		<input message=" " validargs="INST,CONF" addproperty="typeactions.choice" />
+		<if>
+			<equals arg1="${typeactions.choice}" arg2="INST" />
+			<then>
+				<echo> Install WebSphere Application Server  </echo>
+				<antcall target="-install-was"/>
+			</then>
+			<elseif>
+				<equals arg1="${typeactions.choice}" arg2="CONF" />
+				<then>
+					<echo> Configure installed WebSphere System</echo>
+					<antcall target="-configure-was" />
+				</then>
+			</elseif>
+			<else>
+				<echo> Try Again </echo>
+			</else>
+		</if>
+	</target>
+	<target name="uninstall-binary-products" depends="uninstall-only-was,uninstall-only-ihs,uninstall-only-plg" />
+	<target name="install-binary-products" depends="install-only-was,install-only-ihs,install-only-plg" />
+	<target name="-was85-conf">
+		<property file="installer_8.5.5.properties" />
+		<property name="resources.properties" value="installer_8.5.5.properties" />
+
+	</target>
+	<target name="-was90-conf">
+		<property file="installer_9.0.0.properties" />
+		<property name="resources.properties" value="installer_9.0.0.properties" />
+
+	</target>
+	<target name="-install-was">
+		<echo>
+Which Version do you want  to install? ()
+COD  DESCRIPTION
+-----------------------------------------------
+WAS85  WebSphere 8.5.5.x
+WAS90  WebSphere 9.0.x 
+-----------------------------------------------		
+		</echo>
+		<input message=" Select and press Enter" validargs="WAS85,WAS90" addproperty="typeinstallation.choice" />
+		<if>
+			<equals arg1="${typeinstallation.choice}" arg2="WAS85" />
+			<then>
+				<echo> Install WebSphere Application Server 8.5.5 </echo>
+				<antcall target="-installWas855" />
+			</then>
+			<elseif>
+				<equals arg1="${typeinstallation.choice}" arg2="WAS90" />
+				<then>
+					<echo> Install WebSphere Application Server 9.0</echo>
+					<echo> ############################### #######    IMPORTANT   ######## ############################### </echo>
+					<echo> REMEMBER TO CHANGE WEBSPHERE PATH ON installer_9.0.0.properties IF YOU WANT TO USE DEFAULT PATH </echo>
+					<echo> ############################### ############################### ############################### </echo>
+				   <echo> </echo>
+					<antcall target="-installWas90" />
+				</then>
+			</elseif>
+			<else>
+				<echo> Try Again </echo>
+			</else>
+		</if>
+	</target>
+
+	<target name="-installWas855" depends="logging, -was85-conf,-installWas855Actions">
+		<echo> Execute this task ${tasks.choice}</echo>
+		<antcall target="${tasks.choice}" />
+	</target>
+
+	<target name="-installWas855Actions" depends="logging,versionInfo">
+		<loadproperties srcFile="installer_8.5.5.properties" />
+		<echo>
+      WebSphere 8.5.5 Administration Task
+      ###############################################
+      RepositoryHost     = ${RepositoryHost}
+      WAS_repositoryhost = ${WAS_repositoryhost}
+      WAS_LastFixes_repositoryhost=${WAS_LastFixes_repositoryhost}
+      IHS_repositoryhost = ${IHS_repositoryhost}
+      IHS_LastFixes_repositoryhost=${IHS_LastFixes_repositoryhost}
+      PLG_repositoryhost = ${PLG_repositoryhost}
+      PLG_LastFixes_repositoryhost=${PLG_LastFixes_repositoryhost}
+      JDK8_repositoryhost =${JDK8_repositoryhost}
+      JDK8_LastFixes_repositoryhost=${JDK8_LastFixes_repositoryhost}
+      JDK70_repositoryhost=${JDK70_repositoryhost}
+      JDK70_LastFixes_repositoryhost=${JDK70_LastFixes_repositoryhost}
+      JDK71_repositoryhost=${JDK71_repositoryhost}
+      JDK71_LastFixes_repositoryhost=${JDK71_LastFixes_repositoryhost}
+      IM_installerzip    = ${IM_installerzip}
+      WAS_Installed_dir  = ${WAS_Installed_dir} 
+      PLG_Installed_dir  = ${PLG_Installed_dir}
+      IHS_Installed_dir  = ${IHS_Installed_dir}
+      IM_IstalletionDir  = ${IM_Installed_dir}		
+      ###############################################
+		</echo>
+		<echo>Targets:
+      -----------------------------------------------
+      Create Function
+      -----------------------------------------------
+      # remote-install-im (v 1.0) (Download zip File from remote repository and install IM)
+      # local-install-im (v 1.0) (Download zip File from local repository and install IM)
+      # uninstall-im (v 1.0) (Uninstall IBM IM)
+      # retrieve-packages-installed
+      # install-binary-products (Install OR FIX WAS IHS AND Plugin without Install IM)
+      # uninstall-binary-products (Uninstall WAS IHS AND Plugin without uninstall IM)
+      # install-all  (Install OR FIX WAS IHS AND Plugin AND Install IM)
+      # uninstall-all (Uninstall WAS IHS AND Plugin AND Uninstall IM)
+      # install-only-was (Install OR FIX only WAS)
+      # uninstall-only-was
+      # install-only-ihs (Install OR FIX only IHS)
+      # uninstall-only-ihs
+      # install-only-plg (Install OR FIX only PLUGIN)
+      # uninstall-only-plg 
+      -----------------------------------------------
+		 </echo>
+		<input message=" Insert one of the below task and pres enter" addproperty="tasks.choice" />
+	</target>
+
+
+	<target name="-installWas90" depends="logging,-was90-conf,-installWas90Actions">
+		<echo> Execute this task ${tasks.choice}</echo>
+		<antcall target="${tasks.choice}" />
+	</target>
+
+	<target name="-installWas90Actions" depends="logging,versionInfo">
+		<loadproperties srcFile="installer_9.0.0.properties" />
+		<echo>
+		WebSphere 9.0.0 Administration Task
+      ###############################################
+      RepositoryHost     = ${RepositoryHost}
+      WAS_repositoryhost = ${WAS_repositoryhost}
+      WAS_LastFixes_repositoryhost=${WAS_LastFixes_repositoryhost}
+      IHS_repositoryhost = ${IHS_repositoryhost}
+      IHS_LastFixes_repositoryhost=${IHS_LastFixes_repositoryhost}
+      PLG_repositoryhost = ${PLG_repositoryhost}
+      PLG_LastFixes_repositoryhost=${PLG_LastFixes_repositoryhost}
+      JDK8_repositoryhost =${JDK8_repositoryhost}
+      JDK8_LastFixes_repositoryhost=${JDK8_LastFixes_repositoryhost}
+      JDK70_repositoryhost=${JDK70_repositoryhost}
+      JDK70_LastFixes_repositoryhost=${JDK70_LastFixes_repositoryhost}
+      JDK71_repositoryhost=${JDK71_repositoryhost}
+      JDK71_LastFixes_repositoryhost=${JDK71_LastFixes_repositoryhost}
+      IM_installerzip    = ${IM_installerzip}
+      WAS_Installed_dir  = ${WAS_Installed_dir} 
+      PLG_Installed_dir  = ${PLG_Installed_dir}
+      IHS_Installed_dir  = ${IHS_Installed_dir}
+      IM_IstalletionDir  = ${IM_Installed_dir}     
+      ###############################################
+		</echo>
+		<echo>Targets:
+      -----------------------------------------------
+      Create Function
+      -----------------------------------------------
+      # remote-install-im (v 1.0) (Download zip File from remote repository and install IM)
+      # local-install-im (v 1.0) (Download zip File from local repository and install IM)
+      # uninstall-im (v 1.0) (Uninstall IBM IM)
+      # retrieve-packages-installed
+      # install-binary-products (Install OR FIX WAS IHS AND Plugin without Install IM)
+      # uninstall-binary-products (Uninstall WAS IHS AND Plugin without uninstall IM)
+      # install-all  (Install OR FIX WAS IHS AND Plugin AND Install IM)
+      # uninstall-all (Uninstall WAS IHS AND Plugin AND Uninstall IM)
+      # install-only-was (Install OR FIX only WAS)
+      # uninstall-only-was
+      # install-only-ihs (Install OR FIX only IHS)
+      # uninstall-only-ihs
+      # install-only-plg (Install OR FIX only PLUGIN)
+      # uninstall-only-plg 
+      -----------------------------------------------
+		      </echo>
+		<input message=" Insert one of the below task and press enter" addproperty="tasks.choice" />
+	</target>
+	<target name="setupEnviroments" depends="logging">
+		<if>
+			<equals arg1="${typeinstallation.choice}" arg2="WAS85" />
+			<then>
+				<property name="was.version.default" value="com.ibm.websphere.ND.v85 com.ibm.websphere.IBMJAVA.v80 com.ibm.websphere.IBMJAVA.v71" />
+				<property name="ihs.version.default" value="com.ibm.websphere.IHS.v85" />
+				<property name="plg.version.default" value="com.ibm.websphere.PLG.v85" />
+			</then>
+			<elseif>
+				<equals arg1="${typeinstallation.choice}" arg2="WAS90" />
+				<then>
+					<property name="was.version.default" value="com.ibm.websphere.ND.v90 com.ibm.java.jdk.v8" />
+					<property name="ihs.version.default" value="com.ibm.websphere.IHS.v90 com.ibm.java.jdk.v8" />
+					<property name="plg.version.default" value="com.ibm.websphere.PLG.v90 com.ibm.java.jdk.v8" />
+				</then>
+			</elseif>
+			<else>
+
+			</else>
+		</if>
+		<antcall target="-listAvaiablePackagesWAS" />
+		<input message=" Insert one or more value for WAS Installation separate by blank (leave blank for default value)" addproperty="packages.was" defaultvalue="${was.version.default}" />
+		<replace file="${resources.properties}" token="${install-only-was-parameter}" value="${packages.was}" />
+
+		<antcall target="-listAvaiablePackagesIHS" />
+		<input message=" Insert one or more value for IHS Installation separate by blank (leave blank for default value)" addproperty="packages.ihs" defaultvalue="${ihs.version.default}" />
+		<replace file="${resources.properties}" token="${install-only-ihs-parameter}" value="${packages.ihs}" />
+
+		<antcall target="-listAvaiablePackagesPlugin" />
+		<input message=" Insert one or more value for Plugin Installation separate by blank (leave blank for default value)" addproperty="packages.plugins" defaultvalue="${plg.version.default}" />
+
+		<replace file="${resources.properties}" token="${install-only-plg-parameter}" value="${packages.plugins}" />
+
+		<input message="Select the Path For Application Server Root Directory (leave blank for default value)" addproperty="was.root.directory" defaultvalue="/prod/IBM/WebSphere/AppServer/" />
+		<replace file="${resources.properties}" token="${WAS_Installed_dir}" value="${was.root.directory}" />
+
+		<input message="Select the Path For Http Server Root Directory (leave blank for default value)" addproperty="ihs.root.directory" defaultvalue="/prod/IBM/HttpServer/" />
+		<replace file="${resources.properties}" token="${IHS_Installed_dir}" value="${ihs.root.directory}" />
+
+		<input message="Select the Path For Plugin Server Root Directory (leave blank for default value)" addproperty="plg.root.directory" defaultvalue="/prod/IBM/WebSphere/Plugins/" />
+		<replace file="${resources.properties}" token="${PLG_Installed_dir}" value="${plg.root.directory}" />
+		<echo> file ${resources.properties} modified </echo>
+		<var name="tasks.choice" unset="true" />
+		<if>
+			<equals arg1="${typeinstallation.choice}" arg2="WAS85" />
+			<then>
+				<echo> Install WebSphere Application Server 8.5.5 </echo>
+				<antcall target="-installWas855" />
+			</then>
+			<elseif>
+				<equals arg1="${typeinstallation.choice}" arg2="WAS90" />
+				<then>
+					<echo> Install WebSphere Application Server 9.0</echo>
+					<antcall target="-installWas90" />
+				</then>
+			</elseif>
+		</if>
+	</target>
+	<target name="-listAvaiablePackagesWAS" depends="logging">
+		<echo>
+######################################################################################################
+Which WAS Packages do you want  to install? 
+(If you Want to Insert the latest level of Fix is enough to write the first part of Packages without "_" 
+es: for com.ibm.websphere.ND.v85_8.5.5000.20130514_1044 is enough to write com.ibm.websphere.ND.v85
+######################################################################################################
+</echo>
+		<exec executable="${IM_Installed_dir}/eclipse/tools/imcl" resultproperty="result" failonerror="false">
+			<arg line="listAvailablePackages" />
+			<arg line="-repositories ${WAS_repositoryhost},${WAS_LastFixes_repositoryhost},${JDK8_repositoryhost},${JDK8_LastFixes_repositoryhost}" />
+		</exec>
+		<echo>Result: ${result}</echo>
+	</target>
+	<target name="configurePackagesToInstallWAS">
+
+
+	</target>
+	<target name="-listAvaiablePackagesIHS" depends="logging">
+		<echo>
+######################################################################################################
+Which IHS Packages do you want  to install?
+######################################################################################################
+</echo>
+		<exec executable="${IM_Installed_dir}/eclipse/tools/imcl" resultproperty="result" failonerror="false">
+			<arg line="listAvailablePackages" />
+			<arg line="-repositories ${IHS_repositoryhost},${IHS_LastFixes_repositoryhost},${JDK8_repositoryhost},${JDK8_LastFixes_repositoryhost}" />
+		</exec>
+		<echo>Result: ${result}</echo>
+	</target>
+	<target name="-listAvaiablePackagesPlugin" depends="logging">
+		<echo>
+######################################################################################################
+Which PLUGIN Packages do you want  to install?
+######################################################################################################
+		 	</echo>
+		<exec executable="${IM_Installed_dir}/eclipse/tools/imcl" resultproperty="result" failonerror="false">
+			<arg line="listAvailablePackages" />
+			<arg line="-repositories ${PLG_repositoryhost},${PLG_LastFixes_repositoryhost},${JDK8_repositoryhost},${JDK8_LastFixes_repositoryhost}" />
+		</exec>
+		<echo>Result: ${result}</echo>
+	</target>
+	<target name="-configure-was">
+		<echo>
+			Which Version do you want  to install?
+			COD  DESCRIPTION
+			--------------------------------
+			WAS85  WebSphere 8.5.5.x 
+			WAS90  WebSphere 9.0.x.x 
+			--------------------------------
+		</echo>
+		<input message=" Insert one of the below and press enter " validargs="WAS85,WAS90" addproperty="typeinstallation.choice" />
+		<if>
+			<equals arg1="${typeinstallation.choice}" arg2="WAS85" />
+			<then>
+				<echo> Configure WebSphere Application Server 8.5.5 </echo>
+				<echo> launch command ./run.sh configuration-build.xml was85-conf</echo>
+				<!--<exec executable="/bin/bash" resultproperty="result" failonerror="true">
+						<arg line="run.sh configuration-build.xml  was85-conf "/>
+					</exec>-->
+			</then>
+			<elseif>
+				<equals arg1="${typeinstallation.choice}" arg2="WAS90" />
+				<then>
+					<echo> Configure WebSphere Application Server 9.0 </echo>
+					<echo> launch command ./run.sh configuration-build.xml was90-conf</echo>
+					<!--<exec executable="/bin/bash" resultproperty="result" failonerror="true">
+						<arg line="run.sh configuration-build.xml was90-conf" />
+					</exec>-->
+				</then>
+			</elseif>
+			<else>
+				<echo> Try Again </echo>
+				<antcall target="-configure-was" />
+			</else>
+		</if>
+	</target>
+	<!-- BETA -->
+
+	<target name="choose-target-installed-dir">
+		<echo>
+			Which Installation Directory do you want to check
+			COD  DESCRIPTION
+			-----------------------------------------------
+		   1) APPSRV  	
+		   2) HTTPSERVER
+		   3) PLUGIN    
+			-----------------------------------------------		              
+		</echo>
+		<input message=" " validargs="1,2,3" addproperty="type.instdir" />
+		<if>
+			<equals arg1="${type.instdir}" arg2="1" />
+			<then>
+				<property name="installationDirToCheck" value="${WAS_Installed_dir}" />
+			</then>
+			<elseif>
+				<equals arg1="${type.instdir}" arg2="2" />
+				<then>
+					<property name="installationDirToCheck" value="${IHS_Installed_dir}" />
+				</then>
+			</elseif>
+			<elseif>
+				<equals arg1="${type.instdir}" arg2="3" />
+				<then>
+					<property name="installationDirToCheck" value="${PLG_Installed_dir}" />
+				</then>
+			</elseif>
+			<else>
+
+			</else>
+		</if>
+	</target>
+	<target name="retrieve-packages-installed" depends="choose-target-installed-dir">
+		<exec executable="${IM_Installed_dir}/eclipse/tools/imcl" resultproperty="result" failonerror="false">
+			<arg line="listInstalledPackages" />
+			<arg line="-installationDirectory ${installationDirToCheck}" />
+			<arg line="-acceptLicense -preferences com.ibm.cic.common.core.preferences.preserveDownloadedArtifacts=false  -showVerboseProgress" />
+		</exec>
+		<echo>Result: ${result}</echo>
+	</target>
+	<!-- BETA -->
+	<target name="-copy-im">
+		<exec executable="cp" resultproperty="result" failonerror="false">
+			<arg line=" ${IM_installerzip}" />
+			<arg line=" ${download_folder}/IM_installer.zip" />
+
+		</exec>
+		<echo>Result: ${result}</echo>
+	</target>
+	<target name="local-extract-im" depends="-copy-im">
+		<exec executable="unzip" resultproperty="result" failonerror="false">
+			<arg line="${download_folder}/IM_installer.zip" />
+			<arg line="-d ${download_folder}" />
+		</exec>
+		<echo>Result: ${result}</echo>
+	</target>
+	<target name="b" depends="local-extract-im">
+		<exec executable="${download_folder}/tools/imcl" resultproperty="result" failonerror="false">
+			<arg line="install com.ibm.cic.agent -repositories ${download_folder} -installationDirectory ${IM_Installed_dir} -acceptLicense -preferences com.ibm.cic.common.core.preferences.preserveDownloadedArtifacts=false -showVerboseProgress" />
+		</exec>
+		<echo>Result: ${result}</echo>
+		<antcall target="-clean-download" />
+	</target>
+
+	<target name="-download-im">
+		<exec executable="wget" resultproperty="result" failonerror="false">
+			<arg line="-O ${download_folder}/IM_installer.zip" />
+			<arg line="${IM_remoteinstallerzip}" />
+		</exec>
+		<echo>Result: ${result}</echo>
+	</target>
+	<target name="remote-extract-im" depends="-download-im">
+		<exec executable="unzip" resultproperty="result" failonerror="false">
+			<arg line="${download_folder}/IM_installer.zip" />
+			<arg line="-d ${download_folder}" />
+		</exec>
+		<echo>Result: ${result}</echo>
+	</target>
+	<target name="remote-install-im" depends="remote-extract-im">
+		<exec executable="${download_folder}/tools/imcl" resultproperty="result" failonerror="false">
+			<arg line="install com.ibm.cic.agent -repositories ${download_folder} -installationDirectory ${IM_Installed_dir} -acceptLicense -preferences com.ibm.cic.common.core.preferences.preserveDownloadedArtifacts=false -showVerboseProgress" />
+		</exec>
+		<echo>Result: ${result}</echo>
+		<antcall target="-clean-download" />
+	</target>
+
+
+	<target name="-clean-download">
+		<delete includeemptydirs="true" failonerror="false">
+			<fileset dir="${download_folder}" includes="**/*" />
+		</delete>
+
+	</target>
+	<target name="-clean-was">
+		<input message="ATTENTION: Do you really want to delete Phisically was binary on File System? " validargs="YES,NO" addproperty="clean.choice" />
+		<if>
+			<equals arg1="${clean.choice}" arg2="YES" />
+			<then>
+				<echo> Delete all contents inside ${WAS_Installed_dir}</echo>
+				<delete includeemptydirs="true" failonerror="false">
+					<fileset dir="${WAS_Installed_dir}" includes="**/*" />
+				</delete>
+			</then>
+			<elseif>
+				<equals arg1="${clean.choice}" arg2="NO" />
+				<then>
+					<echo> Operation Aborted</echo>
+				</then>
+			</elseif>
+			<else>
+				<antcall target="-configure-was" />
+			</else>
+		</if>
+	</target>
+	<target name="-clean-ihs">
+		<input message="ATTENTION: Do you really want to delete Phisically ihs binary on File System? " validargs="YES,NO" addproperty="clean.choice" />
+		<if>
+			<equals arg1="${clean.choice}" arg2="YES" />
+			<then>
+				<delete includeemptydirs="true" failonerror="false">
+					<fileset dir="${IHS_Installed_dir}" includes="**/*" />
+				</delete>
+
+			</then>
+			<elseif>
+				<equals arg1="${clean.choice}" arg2="NO" />
+				<then>
+					<echo> Operation Aborted</echo>
+				</then>
+			</elseif>
+			<else>
+				<antcall target="-configure-was" />
+			</else>
+		</if>
+	</target>
+	<target name="-clean-plg">
+		<input message="ATTENTION: Do you really want to delete Phisically Plugin binary on File System? " validargs="YES,NO" addproperty="clean.choice" />
+		<if>
+			<equals arg1="${clean.choice}" arg2="YES" />
+			<then>
+				<delete includeemptydirs="true" failonerror="false">
+					<fileset dir="${PLG_Installed_dir}" includes="**/*" />
+				</delete>
+			</then>
+			<elseif>
+				<equals arg1="${clean.choice}" arg2="NO" />
+				<then>
+					<echo> Operation Aborted</echo>
+				</then>
+			</elseif>
+			<else>
+				<antcall target="-configure-was" />
+			</else>
+		</if>
+	</target>
+	<target name="uninstall-im">
+		<exec executable="/var/ibm/InstallationManager/uninstall/uninstallc" resultproperty="result" failonerror="false" />
+		<antcall target="-clean-download" />
+		<echo>Result: ${result}</echo>
+	</target>
+	<target name="install-all" depends="remote-install-im,install-only-was,install-only-ihs,install-only-plg" />
+	<target name="uninstall-all" depends="uninstall-only-was,uninstall-only-ihs,uninstall-only-plg,uninstall-im" />
+	<target name="logging">
+		<record name="build.log" loglevel="debug" append="true" />
+	</target>
+
+	<target name="install-only-was" depends="logging">
+		<exec executable="${IM_Installed_dir}/eclipse/tools/imcl" resultproperty="result" failonerror="false">
+			<arg line="install ${install-only-was-parameter} " />
+			<arg line="-repositories ${WAS_repositoryhost},${JDK8_repositoryhost},${WAS_LastFixes_repositoryhost},${JDK8_LastFixes_repositoryhost},${JDK71_repositoryhost},${JDK71_LastFixes_repositoryhost},${JDK70_LastFixes_repositoryhost},${JDK70_repositoryhost},${IHS_repositoryhost},${IHS_LastFixes_repositoryhost},${PLG_repositoryhost},${PLG_LastFixes_repositoryhost}" />
+			<arg line="-installationDirectory ${WAS_Installed_dir}" />
+			<arg line="-acceptLicense -preferences com.ibm.cic.common.core.preferences.preserveDownloadedArtifacts=false  -showVerboseProgress -properties user.wasjava=java8" />
+		</exec>
+		<echo>Result: ${result}</echo>
+		<antcall target="-clean-download" />
+	</target>
+
+	<target name="uninstall-only-was">
+		<exec executable="${IM_Installed_dir}/eclipse/tools/imcl" resultproperty="result" failonerror="false">
+			<arg line="uninstall ${install-only-was-parameter}" />
+			<arg line="-installationDirectory ${WAS_Installed_dir}" />
+			<arg line="-acceptLicense -preferences com.ibm.cic.common.core.preferences.preserveDownloadedArtifacts=false  -showVerboseProgress" />
+		</exec>
+		<echo>Result: ${result}</echo>
+		<antcall target="-clean-was" />
+	</target>
+	<target name="install-only-ihs">
+		<exec executable="${IM_Installed_dir}/eclipse/tools/imcl" resultproperty="result" failonerror="false">
+			<arg line="install ${install-only-ihs-parameter} " />
+			<arg line="-repositories ${WAS_repositoryhost},${JDK8_repositoryhost}/,${WAS_LastFixes_repositoryhost},${JDK8_LastFixes_repositoryhost},${IHS_repositoryhost},${IHS_LastFixes_repositoryhost},${PLG_repositoryhost},${PLG_LastFixes_repositoryhost}" />
+			<arg line="-installationDirectory ${IHS_Installed_dir}" />
+			<arg line="-acceptLicense -preferences com.ibm.cic.common.core.preferences.preserveDownloadedArtifacts=false  -showVerboseProgress" />
+			<arg line=" -properties user.ihs.httpPort=80,user.wasjava=java8" />
+		</exec>
+		<echo>Result: ${result}</echo>
+		<antcall target="-clean-download" />
+	</target>
+	<target name="uninstall-only-ihs">
+		<exec executable="${IM_Installed_dir}/eclipse/tools/imcl" resultproperty="result" failonerror="false">
+			<arg line="uninstall ${install-only-ihs-parameter}" />
+			<arg line="-installationDirectory ${IHS_Installed_dir}" />
+			<arg line="-acceptLicense -preferences com.ibm.cic.common.core.preferences.preserveDownloadedArtifacts=false  -showVerboseProgress" />
+		</exec>
+		<antcall target="-clean-ihs" />
+	</target>
+
+	<target name="install-only-plg">
+		<exec executable="${IM_Installed_dir}/eclipse/tools/imcl" resultproperty="result" failonerror="false">
+			<arg line="install ${install-only-plg-parameter} " />
+			<arg line="-repositories ${WAS_repositoryhost},${JDK8_repositoryhost}/,${WAS_LastFixes_repositoryhost},${JDK8_LastFixes_repositoryhost},${IHS_repositoryhost},${IHS_LastFixes_repositoryhost},${PLG_repositoryhost},${PLG_LastFixes_repositoryhost}" />
+			<arg line="-installationDirectory ${PLG_Installed_dir}" />
+			<arg line="-acceptLicense -preferences com.ibm.cic.common.core.preferences.preserveDownloadedArtifacts=false  -showVerboseProgress " />
+			<arg line="-properties user.wasjava=java8 " />
+		</exec>
+		<echo>Result: ${result}</echo>
+		<antcall target="-clean-download" />
+	</target>
+	<target name="uninstall-only-plg">
+		<exec executable="${IM_Installed_dir}/eclipse/tools/imcl" resultproperty="result" failonerror="false">
+			<arg line="uninstall ${install-only-plg-parameter}" />
+			<arg line="-installationDirectory ${PLG_Installed_dir}" />
+			<arg line="-acceptLicense -preferences com.ibm.cic.common.core.preferences.preserveDownloadedArtifacts=false  -showVerboseProgress" />
+		</exec>
+		<antcall target="-clean-plg" />
+	</target>
+
+	<target name="manage-profile">
+		<echo>
+		Which profile doyou want to create?
+		COD  DESCRIPTION
+		-----------------------------------------------
+	   1) DMGR  	Deploy Manager
+	   2) CUST  	Custom Node
+	   3) DEFAULT  Default Profile
+		-----------------------------------------------		              
+		</echo>
+		<input message=" " validargs="1,2,3" addproperty="typeprofile.choice" />
+		<if>
+			<equals arg1="${typeprofile.choice}" arg2="1" />
+			<then>
+				<echo> Deploy Manager Profile Creation</echo>
+				<antcall target="-createDmgrProfile" />
+			</then>
+			<elseif>
+				<equals arg1="${typeprofile.choice}" arg2="2" />
+				<then>
+					<echo> Custom Node Profile Creation</echo>
+					<antcall target="-createCustomProfile" />
+				</then>
+			</elseif>
+			<elseif>
+				<equals arg1="${typeprofile.choice}" arg2="3" />
+				<then>
+					<antcall target="-createDefaultProfile" />
+				</then>
+			</elseif>
+			<else>
+				<echo> Try Again </echo>
+			</else>
+		</if>
+	</target>
+	<target name="-createBothProfile" depends="-createDmgrProfile,-createCustomProfile" />
+	<!-- CREAZIONE DMGR PROFILE -->
+	<target name="-inputInfoCreateDmgrProfile" description="Get user input">
+		<input message="Insert Name of The Dmgr Profile [Default Dmgr01]" addproperty="input.ProfileName" defaultvalue="Dmgr01" />
+		<input message="Do you want to enable security? [Default true]" addproperty="input.admin.enablesecurity" defaultvalue="true" />
+		<input message="Input Admin Username [Default wasadmin]" addproperty="input.admin.username" defaultvalue="wasadmin" />
+		<input message="Input Admin Password [Default wasadmin]" addproperty="input.admin.password" defaultvalue="wasadmin" />
+		<input message="Input Certificate Expiration years [Default 10]" addproperty="input.admin.expcertificate" defaultvalue="10" />
+	</target>
+	<target name="-createDmgrProfile" depends="-inputInfoCreateDmgrProfile">
+		<property name="dmgr.profile.name" value="${input.ProfileName}" />
+		<echo>${WAS_Installed_dir}/bin/manageprofiles.sh -create -profileName ${input.ProfileName}  -profilePath ${WAS_Installed_dir}/profiles/${input.ProfileName}/ -templatePath ${WAS_Installed_dir}/profileTemplates/management -serverType DEPLOYMENT_MANAGER -enableAdminSecurity ${input.admin.enablesecurity} -adminPassword  ${input.admin.password} -adminUserName  ${input.admin.username} -personalCertValidityPeriod ${input.admin.expcertificate}</echo>
+		<exec executable="${WAS_Installed_dir}/bin/manageprofiles.sh" resultproperty="result" failonerror="false">
+			<arg line="-create" />
+			<arg line="-profileName ${input.ProfileName}  -profilePath ${WAS_Installed_dir}/profiles/${input.ProfileName}/ -templatePath ${WAS_Installed_dir}/profileTemplates/management -serverType DEPLOYMENT_MANAGER -enableAdminSecurity ${input.admin.enablesecurity} -adminPassword  ${input.admin.password} -adminUserName  ${input.admin.username} -personalCertValidityPeriod ${input.admin.expcertificate}" />
+		</exec>
+		<echo>Result: ${result}</echo>
+		<var name="${input.ProfileName}" unset="true" />
+	</target>
+
+	<!-- CREAZIONE CUSTOM PROFILE -->
+	<target name="-inputInfoCreateCustomProfile" description="Get user input">
+		<input message="Insert Name of The Custom Profile [Default Custom01]" addproperty="input.CustomProfileName" defaultvalue="Custom01" />
+	</target>
+	<target name="-createCustomProfile" depends="-inputInfoCreateCustomProfile">
+		<echo>${WAS_Installed_dir}/bin/manageprofiles.sh -create -profileName ${input.ProfileName}  -profilePath ${WAS_Installed_dir}/profiles/${input.ProfileName}/ -templatePath ${WAS_Installed_dir}/profileTemplates/management </echo>
+		<exec executable="${WAS_Installed_dir}/bin/manageprofiles.sh" resultproperty="result" failonerror="false">
+			<arg line="-create" />
+			<arg line="-profileName ${input.CustomProfileName} -profilePath ${WAS_Installed_dir}/profiles/${input.ProfileName}/ -templatePath ${WAS_Installed_dir}/profileTemplates/managed/ -federateLater true" />
+		</exec>
+		<echo>Result: ${result}</echo>
+		<var name="${input.ProfileName}" unset="true" />
+	</target>
+	<!-- CREAZIONE DEFAULT PROFILE -->
+	<target name="-inputInfoCreateDefaultProfile" description="Get user input">
+		<input message="Insert Name of The Default Profile [Default Custom01]" addproperty="input.CustomProfileName" defaultvalue="Custom01" />
+	</target>
+	<target name="-createDefaultProfile" depends="-inputInfoCreateDefaultProfile">
+		<echo>${WAS_Installed_dir}/bin/manageprofiles.sh -create -profileName ${input.CustomProfileName}  -profilePath ${WAS_Installed_dir}/profiles/${input.CustomProfileName}/ -templatePath ${WAS_Installed_dir}/profileTemplates/default/ </echo>
+		<exec executable="${WAS_Installed_dir}/bin/manageprofiles.sh" resultproperty="result" failonerror="false">
+			<arg line="-create" />
+			<arg line="-profileName ${input.CustomProfileName} -profilePath ${WAS_Installed_dir}/profiles/${input.CustomProfileName}/ -templatePath ${WAS_Installed_dir}/profileTemplates/default/ -federateLater true" />
+		</exec>
+		<echo>Result: ${result}</echo>
+		<var name="${input.ProfileName}" unset="true" />
+	</target>
+
+
+</project>
