@@ -1,5 +1,5 @@
 # Authors: Sergio Stinchi, Lorenzo Monaco
-
+#migrate from new gitrepos
 # 1.0.0          Starting version
 
 import sys
@@ -58,7 +58,8 @@ def clearExit(text, status):
    AdminConfig.reset()
    print "%s done" % scriptName
    sys.exit(status)
-   return
+   return
+
 def checkScopeName(scopeName):
     print "Check scopeName ... for %s" % (scopeName)  
     scope = None 
