@@ -967,9 +967,9 @@ Witch Type Of Chipers Level Do you want to apply?
 	<target name="inputSetExecutionOwnerWasup" description="Get user input" depends="logging">
 	      <input message="Do you want to set wasup as execution owner for all servers? [yes , no] [default NO]" addproperty="input.setexecutionownerwasup" />
 	   </target>
-	
-	
-
+	<target name="inputSetupVerifyHostNameToFalse" description="Get user input" depends="logging">
+	      <input message="Do you want to setup  VerifyHostName Custom Property on Global Security? [yes , no] [default NO]" addproperty="input.setupVerifyHostNameToFalse" />
+	</target>
 	<target name="inputWSAdminData" description="Get user input" depends="logging">
 		<input message="Insert the Scope of the resources. The scope can be a cluster, a node, a server or insert ALL for all the resources (if the scope is a server it must be used the form Node:Server)" addproperty="remoteScope" />
 	</target>
@@ -1002,7 +1002,7 @@ Witch Type Of Chipers Level Do you want to apply?
 		</exec>
 		<echo>Result: ${result}</echo>
 	</target>
-	<target name="basicTuning" depends="logging, inputDisableClientAutXDSSLSettings,inputDisableEmbeddedChoice,inputDisableIPV6,inputapplyEnableSecurityServiceCheck,inputapplyScriptingPatch,inputApplyJDKLevel,inputSetupHTTPOnlyCookiesProps,inputApplytrustedSensitiveHeaderOrigin">
+	<target name="basicTuning" depends="logging, inputDisableClientAutXDSSLSettings,inputDisableEmbeddedChoice,inputDisableIPV6,inputapplyEnableSecurityServiceCheck,inputapplyScriptingPatch,inputApplyJDKLevel,inputSetupHTTPOnlyCookiesProps,inputApplytrustedSensitiveHeaderOrigin,setupVerifyHostNameToFalse">
 		<echo message="--- Apply Basic Tuning on Enviroment ---" />
 		<if>
 			<and>
@@ -1097,6 +1097,18 @@ Witch Type Of Chipers Level Do you want to apply?
 		   <then>
 		      <exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
 		         <arg line=" -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info -username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/standalone/AddTrustedSensitiveHeaderOriginCP.py " />
+		      </exec>
+		      <echo>Result: ${result}</echo>
+		   </then>
+		</if>
+		<if>
+		   <and>
+		      <isset property="input.setupVerifyHostNameToFalse" />
+		      <equals arg1="${input.setupVerifyHostNameToFalse}" arg2="yes" />
+		   </and>
+		   <then>
+		      <exec executable="${DeploymentManagerBin}/wsadmin.sh" resultproperty="result" failonerror="false">
+		         <arg line=" -host ${destinationHost} -port ${destinationSoapPort} -conntype soap -javaoption -Dwsadmin.script.libraries=../scripts/info -username ${destinationAdminID} -password ${destinationAdminPasswd} -f ../scripts/standalone/setupVerifyHostNamePropsToFalse.py " />
 		      </exec>
 		      <echo>Result: ${result}</echo>
 		   </then>
