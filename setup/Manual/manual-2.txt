@@ -1,0 +1,21 @@
+####################################################################################################################
+The script creates both JMS and MQ  Connection Factory according to the properties available into the file.
+Property file composition
+####################################################################################################################
+scopeName*               The name of the resource scope Warning: if the scope is a server, and its name is not unique on the cell, the following form must be used:<Node>:<Server>
+name*                    The name of the resource 
+jndiName*                The Jndi of the resource 
+authenticationAlias      The name of a J2C authentication alias used for component-managed authentication of connections.
+xaRecoveryAuthAlias      Specifies the alias that the connection factory uses to authenticate for transaction recovery.
+description              An optional description for the resource.
+targetClient*            JMS or MQ
+Type                     Valid only for JMS targetClient VALUES:[ queue / topic]
+typeConnectionFactory    Values [MQConnectionFactory / MQQueueConnectionFactory /ConnectionFactory /QueueConnectionFactory TopicConnectionFactory ]
+JMSbusName*              [Valid only for JMS targetClient]     The name of the service integration bus to connect to.
+MQqueueManager           [Valid only for MQ targetClient]      The name of the queue manager to connect to. 
+MQhostName*              [Valid only for MQ targetClient]      The host name, IPv4, or IPv6 address of the WebSphere MQ queue manager to connect to.
+MQchannel                [Valid only for MQ targetClient]      The WebSphere MQ server connection channel name used when connecting to WebSphere MQ.
+MQport                   [Valid only for MQ targetClient]      The port number on which WebSphere MQ is listening.
+MQtransportType          [Valid only for MQ targetClient]      VALUES: [BINDINGS / BINDINGS_THEN_CLIENT / CLIENT]
+connectionNameList       [Valid only for MQ targetClient]      List of Connection name present from WAS 8.5.5 and 
+deleteIfExist            1 if the resource has to be deleted if already existent

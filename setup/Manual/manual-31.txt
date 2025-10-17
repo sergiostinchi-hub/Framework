@@ -1,0 +1,5 @@
+                              ##########################
+                              # AllowDeleteIfExist Task # 
+                              ##########################
+Allow to change deleteIfExist Value inside each file or part of all property file
+from 1 (allow delete if resource exist)  to 0 (if the resource exist the creation is skipped).

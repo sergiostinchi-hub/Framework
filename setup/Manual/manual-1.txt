@@ -1,0 +1,24 @@
+####################################################################################################################
+The script creates both JMS and MQ Activation Specification according to the properties available into the file used at command line (a JMS Activation Specification into the previous example).
+4.1.3 Property file composition
+
+scopeName= The name of the resource scope (Warning: if the scope is a server, and its name is not unique on the cell, the following form must be used: <Node>:<Server>)
+name = The name of the resource 
+jndiName = The Jndi of the resource
+destinationType=  The type of the destination. Admitted values:[javax.jms.Queue ][javax.jms.Topic]
+destinationJndiName = The Jndi of the Destination
+targetClient=JMS or MQ
+authenticationAlias = The name of a J2C authentication alias used for component-managed authentication of connections. 
+description = An optional description for the resource.
+JMSbusName = Valid only for JMS targetClient [The name of the bus to connect to]
+JMSmaxBatchSize = Valid only for JMS targetClient [The maximum number of messages received from the messaging engine in a single batch]
+JMSmaxConcurrency = Valid only for JMS targetClient [The maximum number of endpoints to which messages are delivered concurrently]
+MQqueueManager = Valid only for MQ targetClient [The name of the queue manager to connect to]
+MQhostName = Valid only for MQ targetClient [The host name, IPv4, or IPv6 address of the WebSphere MQ queue manager to connect to]
+MQchannel = Valid only for MQ targetClient [The WebSphere MQ server connection channel name used when connecting to WebSphere MQ]
+MQport=Valid only for MQ targetClient [The port number on which WebSphere MQ is listening]
+MQtransportType=Valid only for MQ targetClient Admitted values:[1. BINDINGS, 2. BINDINGS_THEN_CLIENT 3. CLIENT Default value: BINDINGS_THEN_CLIENT]
+was_stopEndpointIfDeliveryFails= Valid only for MQ targetClient Admitted values:[1. true, 2. false]
+was_failureDeliveryCount=Valid only for MQ targetClient [The number of sequential message delivery failures to an endpoint that are allowed before message delivery]
+deleteIfExist = 1 if the resource has to be deleted if already existent
+####################################################################################################################

@@ -1,0 +1,24 @@
+					##########################
+						createJDBCProviders
+					##########################
+This Function create a new JDBC Provider based on information written in specific property file 
+The property file must have followed value
+# Data
+scopeName = ''                # mandatory [The name of the resource scope (i.e: Telematico, DogTelProNode01, ...) ]
+                              #            Warning: if the scope is a server and its name is not unique on the cell 
+                              #                     it must be used the form <Node>:<Server> 
+databaseType = ''             # mandatory [Database type. Admitted values: DB2, Derby, Informix, Oracle, Sybase, SQL Server, User-defined]
+providerType = ''             # mandatory [The JDBC provider type, i.e: DB2 Universal JDBC Driver Provider, Informix JDBC Driver or Oracle JDBC Driver]
+classpath = ''                # mandatory [Specifies a list of paths or JAR file names that form the location for the resource provider classes]
+name = ''                     # mandatory [The name of the JDBC provider]
+description = ''              # optional  [The description for the JDBC provider]
+implementationClassName = ''  # optional  [Specifies the Java class name for the JDBC driver implementation]
+nativePath = ''               # optional  [Specifies a list of paths that form the location for the resource provider native libraries]
+isolated = 'false'            # optional  [Specifies whether the JDBC provider loads within the class loader. Admitted values: true or false. The default value is false. 
+                              #            You cannot specify a native path for an isolated JDBC provider]
+xa='false'                    # mandatory [It drives the implementation type. Admitted values: true or false. If not provided defaults to false
+                              #            Use false if your application runs in a single phase or a local transaction. 
+							  #            Use true to run in a global transaction]
+deleteIfExist = 0             # 1 = delete the resource if exists  
+webSphereVars = []            # WebSphere Variables, list of two items lists (e.g.: [ ['INFORMIX_JDBC_PATH', '/opt/IBM/informix/jdbc'] ])
+					
